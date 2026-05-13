@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Moto Story</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --orange: #ff6b35;
+    --orange-glow: rgba(255, 107, 53, 0.4);
+    --bg: #0d0d0f;
+    --surface: #1a1a1e;
+    --surface2: #242428;
+    --text: #f0f0f0;
+    --text-dim: #888;
+    --radius: 16px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  header {
+    width: 100%;
+    padding: 20px 24px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo {
+    width: 32px;
+    height: 32px;
+    background: var(--orange);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+
+  header h1 {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+
+  header span {
+    font-size: 20px;
+    font-weight: 300;
+    color: var(--text-dim);
+  }
+
+  .container {
+    width: 100%;
+    max-width: 480px;
+    padding: 24px 20px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* ── Upload zone ── */
+  .upload-zone {
+    border: 1.5px dashed #444;
+    border-radius: var(--radius);
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+  }
+
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--orange);
+    background: rgba(255, 107, 53, 0.05);
+  }
+
+  .upload-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .upload-icon {
+    font-size: 36px;
+    margin-bottom: 12px;
+  }
+
+  .upload-zone h2 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  .upload-zone p {
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  /* ── Stats cards ── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 14px 10px;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--orange);
+    letter-spacing: -0.5px;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── Preview ── */
+  .preview-wrapper {
+    position: relative;
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--surface);
+    aspect-ratio: 9/16;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* checkered background to show transparency */
+  .preview-wrapper::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(45deg, #2a2a2a 25%, transparent 25%),
+      linear-gradient(-45deg, #2a2a2a 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #2a2a2a 75%),
+      linear-gradient(-45deg, transparent 75%, #2a2a2a 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+  }
+
+  .preview-placeholder {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    color: var(--text-dim);
+    padding: 20px;
+  }
+
+  .preview-placeholder .icon { font-size: 40px; margin-bottom: 12px; }
+  .preview-placeholder p { font-size: 14px; line-height: 1.5; }
+
+  #preview-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: none;
+    z-index: 2;
+  }
+
+  /* ── Customization ── */
+  .section-title {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+  }
+
+  .color-picker {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .color-swatch {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: border-color 0.15s, transform 0.15s;
+  }
+
+  .color-swatch:hover { transform: scale(1.1); }
+  .color-swatch.active { border-color: white; }
+
+  /* ── Buttons ── */
+  .actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  button {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  button:active { transform: scale(0.98); }
+
+  button:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  button:disabled:active { transform: none; }
+
+  .btn-primary {
+    background: var(--orange);
+    color: white;
+  }
+
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+  }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #222;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 100px;
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 100;
+    border: 1px solid #333;
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ── Error ── */
+  .error-msg {
+    background: rgba(255, 60, 60, 0.1);
+    border: 1px solid rgba(255, 60, 60, 0.3);
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 14px;
+    color: #ff6b6b;
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🏍</div>
+  <h1>Moto <span>Story</span></h1>
+</header>
+
+<div class="container">
+
+  <div class="upload-zone" id="uploadZone">
+    <input type="file" id="fileInput" accept=".gpx">
+    <div class="upload-icon">📍</div>
+    <h2>Importer un fichier GPX</h2>
+    <p>Calimoto · Kurviger · GeoRide · Wikiloc<br>Glisse ou clique pour choisir</p>
+  </div>
+
+  <div class="error-msg" id="errorMsg"></div>
+
+  <!-- Stats (hidden until GPX loaded) -->
+  <div class="stats-grid" id="statsGrid" style="display:none">
+    <div class="stat-card">
+      <div class="stat-value" id="statDist">—</div>
+      <div class="stat-label">km</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="statDur">—</div>
+      <div class="stat-label">durée</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="statSpeed">—</div>
+      <div class="stat-label">km/h moy.</div>
+    </div>
+  </div>
+
+  <!-- Preview -->
+  <div class="preview-wrapper" id="previewWrapper">
+    <div class="preview-placeholder" id="previewPlaceholder">
+      <div class="icon">🗺️</div>
+      <p>L'aperçu de ta story<br>apparaîtra ici</p>
+    </div>
+    <canvas id="preview-canvas"></canvas>
+  </div>
+
+  <!-- Color picker -->
+  <div id="customizeSection" style="display:none">
+    <p class="section-title">Couleur du tracé</p>
+    <div class="color-picker" id="colorPicker">
+      <div class="color-swatch active" style="background:#ff6b35" data-color="#ff6b35"></div>
+      <div class="color-swatch" style="background:#00d4ff" data-color="#00d4ff"></div>
+      <div class="color-swatch" style="background:#a855f7" data-color="#a855f7"></div>
+      <div class="color-swatch" style="background:#22c55e" data-color="#22c55e"></div>
+      <div class="color-swatch" style="background:#f59e0b" data-color="#f59e0b"></div>
+      <div class="color-swatch" style="background:#ec4899" data-color="#ec4899"></div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="actions" id="actionButtons" style="display:none">
+    <button class="btn-primary" id="shareBtn">
+      <span>↑</span> Partager la story
+    </button>
+    <button class="btn-secondary" id="resetBtn">
+      Nouvelle sortie
+    </button>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Hidden render canvas (full resolution) -->
+<canvas id="render-canvas" style="display:none"></canvas>
+
+<script>
+// ── Constants ──────────────────────────────────────────────
+const STORY_W = 1080;
+const STORY_H = 1920;
+const PADDING = 0.12; // fraction of canvas to pad around the route
+
+// ── State ──────────────────────────────────────────────────
+let currentPoints = [];
+let currentStats  = {};
+let traceColor    = '#ff6b35';
+let renderCanvas  = document.getElementById('render-canvas');
+let previewCanvas = document.getElementById('preview-canvas');
+
+// ── GPX Parsing ────────────────────────────────────────────
+function parseGPX(text) {
+  const xml = new DOMParser().parseFromString(text, 'text/xml');
+  const parseErr = xml.querySelector('parsererror');
+  if (parseErr) throw new Error('Fichier GPX invalide ou corrompu.');
+
+  const trkpts = [...xml.querySelectorAll('trkpt')];
+  if (trkpts.length < 2) throw new Error('Le fichier GPX doit contenir au moins 2 points de tracé.');
+
+  return trkpts.map(pt => ({
+    lat:  parseFloat(pt.getAttribute('lat')),
+    lon:  parseFloat(pt.getAttribute('lon')),
+    time: pt.querySelector('time') ? new Date(pt.querySelector('time').textContent) : null,
+  }));
+}
+
+// ── Haversine distance (km) ────────────────────────────────
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const φ1 = lat1 * Math.PI / 180, φ2 = lat2 * Math.PI / 180;
+  const Δφ = (lat2 - lat1) * Math.PI / 180;
+  const Δλ = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(Δφ/2)**2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2)**2;
+  return R * 2 * Math.asin(Math.sqrt(a));
+}
+
+// ── Stats calculation ──────────────────────────────────────
+// Moving time: sum only segments where speed > 3 km/h (filters stops & pauses)
+function calcStats(points) {
+  let totalDist = 0;
+  let movingMs  = 0;
+
+  for (let i = 1; i < points.length; i++) {
+    const d = haversine(points[i-1].lat, points[i-1].lon, points[i].lat, points[i].lon);
+    totalDist += d;
+
+    if (points[i].time && points[i-1].time) {
+      const dtMs = points[i].time - points[i-1].time;
+      const dtH  = dtMs / 3600000;
+      const segSpeedKmh = dtH > 0 ? d / dtH : 0;
+      if (segSpeedKmh > 3) movingMs += dtMs; // only count moving segments
+    }
+  }
+
+  const movingH   = movingMs / 3600000;
+  const avgSpeed  = movingH > 0.01 ? totalDist / movingH : null;
+
+  return {
+    distKm:   Math.round(totalDist * 10) / 10,
+    movingMs,
+    avgSpeed: avgSpeed ? Math.round(avgSpeed) : null,
+  };
+}
+
+function formatDuration(ms) {
+  if (!ms || ms <= 0) return '—';
+  const h   = Math.floor(ms / 3600000);
+  const min = Math.floor((ms % 3600000) / 60000);
+  if (h === 0) return `${min}min`;
+  if (min === 0) return `${h}h`;
+  return `${h}h${String(min).padStart(2, '0')}`;
+}
+
+// ── Canvas rendering ───────────────────────────────────────
+function renderStory(points, stats, color) {
+  const canvas = renderCanvas;
+  canvas.width  = STORY_W;
+  canvas.height = STORY_H;
+  const ctx = canvas.getContext('2d');
+
+  ctx.clearRect(0, 0, STORY_W, STORY_H); // transparent background
+
+  // Bounding box
+  let minLat = Infinity, maxLat = -Infinity;
+  let minLon = Infinity, maxLon = -Infinity;
+  for (const p of points) {
+    minLat = Math.min(minLat, p.lat); maxLat = Math.max(maxLat, p.lat);
+    minLon = Math.min(minLon, p.lon); maxLon = Math.max(maxLon, p.lon);
+  }
+
+  // Route area: top 72% of canvas (leave room for stats panel at bottom)
+  const routeAreaH = STORY_H * 0.72;
+  const pad        = Math.min(STORY_W, routeAreaH) * PADDING;
+  const drawW      = STORY_W - pad * 2;
+  const drawH      = routeAreaH - pad * 2;
+
+  // Scale to fit, preserving aspect ratio
+  const latSpan = maxLat - minLat || 0.001;
+  const lonSpan = maxLon - minLon || 0.001;
+  const scaleX  = drawW / lonSpan;
+  const scaleY  = drawH / latSpan;
+  const scale   = Math.min(scaleX, scaleY);
+
+  // Center the route in the available area
+  const routeW = lonSpan * scale;
+  const routeH = latSpan * scale;
+  const offsetX = (STORY_W - routeW) / 2;
+  const offsetY = pad + (drawH - routeH) / 2;
+
+  const toCanvas = (lat, lon) => ({
+    x: offsetX + (lon - minLon) * scale,
+    y: offsetY + (maxLat - lat) * scale,  // flip Y
+  });
+
+  // ── Draw route (3-pass glow effect) ────────────────────
+  const passes = [
+    { width: 24, alpha: 0.08 },
+    { width: 12, alpha: 0.18 },
+    { width:  4, alpha: 1.00 },
+  ];
+
+  for (const pass of passes) {
+    ctx.beginPath();
+    const first = toCanvas(points[0].lat, points[0].lon);
+    ctx.moveTo(first.x, first.y);
+    for (let i = 1; i < points.length; i++) {
+      const p = toCanvas(points[i].lat, points[i].lon);
+      ctx.lineTo(p.x, p.y);
+    }
+    ctx.strokeStyle = color;
+    ctx.globalAlpha = pass.alpha;
+    ctx.lineWidth   = pass.width;
+    ctx.lineCap     = 'round';
+    ctx.lineJoin    = 'round';
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  // ── Start dot ──────────────────────────────────────────
+  const startPt = toCanvas(points[0].lat, points[0].lon);
+  // outer ring
+  ctx.beginPath();
+  ctx.arc(startPt.x, startPt.y, 14, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.globalAlpha = 0.25;
+  ctx.fill();
+  ctx.globalAlpha = 1;
+  // inner dot
+  ctx.beginPath();
+  ctx.arc(startPt.x, startPt.y, 7, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+
+  // ── Stats panel (bottom ~28% of canvas) ────────────────
+  const panelY = routeAreaH;
+  const panelH = STORY_H - panelY;
+
+  // Gradient: transparent → opaque dark
+  const grad = ctx.createLinearGradient(0, panelY - 80, 0, STORY_H);
+  grad.addColorStop(0, 'rgba(0,0,0,0)');
+  grad.addColorStop(0.35, 'rgba(0,0,0,0.65)');
+  grad.addColorStop(1, 'rgba(0,0,0,0.82)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, panelY - 80, STORY_W, panelH + 80);
+
+  // Distance (large)
+  const distText = stats.distKm ? `${stats.distKm} km` : '— km';
+  ctx.fillStyle = 'white';
+  ctx.font = `800 ${STORY_W * 0.17}px -apple-system, SF Pro Display, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(distText, STORY_W / 2, panelY + panelH * 0.28);
+
+  // Divider line
+  const divW = STORY_W * 0.4;
+  ctx.beginPath();
+  ctx.moveTo(STORY_W / 2 - divW / 2, panelY + panelH * 0.48);
+  ctx.lineTo(STORY_W / 2 + divW / 2, panelY + panelH * 0.48);
+  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+  ctx.lineWidth = 1.5;
+  ctx.globalAlpha = 1;
+  ctx.stroke();
+
+  // Duration + Speed (side by side)
+  const durText   = formatDuration(stats.movingMs);
+  const speedText = stats.avgSpeed ? `${stats.avgSpeed} km/h` : '—';
+
+  ctx.font = `600 ${STORY_W * 0.058}px -apple-system, SF Pro Display, sans-serif`;
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  ctx.textAlign = 'center';
+  ctx.fillText(durText,   STORY_W * 0.3,  panelY + panelH * 0.63);
+  ctx.fillText(speedText, STORY_W * 0.7,  panelY + panelH * 0.63);
+
+  // Sub-labels
+  ctx.font = `400 ${STORY_W * 0.034}px -apple-system, SF Pro Display, sans-serif`;
+  ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  ctx.fillText('DURÉE',    STORY_W * 0.3,  panelY + panelH * 0.76);
+  ctx.fillText('MOYENNE',  STORY_W * 0.7,  panelY + panelH * 0.76);
+
+  // Accent color dot next to sub-labels
+  ctx.beginPath();
+  ctx.arc(STORY_W / 2, panelY + panelH * 0.91, 4, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+}
+
+function updatePreview() {
+  renderStory(currentPoints, currentStats, traceColor);
+
+  // Downscale to preview canvas
+  const wrapper = document.getElementById('previewWrapper');
+  const maxW = wrapper.clientWidth;
+  const maxH = wrapper.clientHeight;
+  const scale = Math.min(maxW / STORY_W, maxH / STORY_H);
+
+  previewCanvas.width  = STORY_W * scale;
+  previewCanvas.height = STORY_H * scale;
+  const ctx = previewCanvas.getContext('2d');
+  ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+  ctx.drawImage(renderCanvas, 0, 0, previewCanvas.width, previewCanvas.height);
+  previewCanvas.style.display = 'block';
+}
+
+// ── File handling ──────────────────────────────────────────
+function handleFile(file) {
+  if (!file || !file.name.toLowerCase().endsWith('.gpx')) {
+    showError('Merci de choisir un fichier .gpx');
+    return;
+  }
+  hideError();
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const points = parseGPX(e.target.result);
+      const stats  = calcStats(points);
+
+      currentPoints = points;
+      currentStats  = stats;
+
+      // Update stats display
+      document.getElementById('statDist').textContent  = stats.distKm ?? '—';
+      document.getElementById('statDur').textContent   = formatDuration(stats.movingMs);
+      document.getElementById('statSpeed').textContent = stats.avgSpeed ?? '—';
+
+      document.getElementById('statsGrid').style.display        = 'grid';
+      document.getElementById('customizeSection').style.display = 'block';
+      document.getElementById('actionButtons').style.display    = 'flex';
+      document.getElementById('previewPlaceholder').style.display = 'none';
+
+      updatePreview();
+    } catch (err) {
+      showError(err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ── Upload zone events ─────────────────────────────────────
+const uploadZone = document.getElementById('uploadZone');
+const fileInput  = document.getElementById('fileInput');
+
+fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+
+uploadZone.addEventListener('dragover', e => {
+  e.preventDefault();
+  uploadZone.classList.add('drag-over');
+});
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('drag-over');
+  handleFile(e.dataTransfer.files[0]);
+});
+
+// ── Color picker ───────────────────────────────────────────
+document.getElementById('colorPicker').addEventListener('click', e => {
+  const swatch = e.target.closest('.color-swatch');
+  if (!swatch) return;
+  document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+  swatch.classList.add('active');
+  traceColor = swatch.dataset.color;
+  if (currentPoints.length) updatePreview();
+});
+
+// ── Share ──────────────────────────────────────────────────
+document.getElementById('shareBtn').addEventListener('click', async () => {
+  if (!currentPoints.length) return;
+  renderStory(currentPoints, currentStats, traceColor);
+
+  renderCanvas.toBlob(async blob => {
+    const file = new File([blob], 'moto-story.png', { type: 'image/png' });
+
+    // Try Web Share API (works on iOS Safari 15+, Android Chrome)
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: 'Ma sortie moto' });
+        return;
+      } catch (err) {
+        if (err.name === 'AbortError') return; // user cancelled, that's fine
+        // fall through to download fallback
+      }
+    }
+
+    // Desktop fallback: trigger download
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href     = url;
+    a.download = 'moto-story.png';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showToast('Image téléchargée ✓');
+  }, 'image/png');
+});
+
+// ── Reset ──────────────────────────────────────────────────
+document.getElementById('resetBtn').addEventListener('click', () => {
+  currentPoints = [];
+  currentStats  = {};
+  fileInput.value = '';
+  document.getElementById('statsGrid').style.display        = 'none';
+  document.getElementById('customizeSection').style.display = 'none';
+  document.getElementById('actionButtons').style.display    = 'none';
+  document.getElementById('previewPlaceholder').style.display = 'block';
+  previewCanvas.style.display = 'none';
+  hideError();
+});
+
+// ── Helpers ────────────────────────────────────────────────
+function showError(msg) {
+  const el = document.getElementById('errorMsg');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function hideError() {
+  document.getElementById('errorMsg').style.display = 'none';
+}
+
+let toastTimer;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>

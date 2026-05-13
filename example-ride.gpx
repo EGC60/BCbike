@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="MotoStory-Test"
+  xmlns="http://www.topografix.com/GPX/1/1">
+  <metadata>
+    <name>Boucle Verdon - Gorges et cols</name>
+    <desc>Sortie fictive de test (~180 km, ~2h45, ~65 km/h moy.)</desc>
+    <time>2024-06-15T08:00:00Z</time>
+  </metadata>
+  <trk>
+    <name>Verdon Loop</name>
+    <trkseg>
+      <!-- Départ: Moustiers-Sainte-Marie -->
+      <trkpt lat="43.8456" lon="6.2203"><time>2024-06-15T08:00:00Z</time></trkpt>
+      <trkpt lat="43.8420" lon="6.2350"><time>2024-06-15T08:02:00Z</time></trkpt>
+      <trkpt lat="43.8380" lon="6.2520"><time>2024-06-15T08:04:00Z</time></trkpt>
+      <trkpt lat="43.8310" lon="6.2780"><time>2024-06-15T08:07:00Z</time></trkpt>
+      <trkpt lat="43.8250" lon="6.3050"><time>2024-06-15T08:10:00Z</time></trkpt>
+      <!-- Gorges du Verdon -->
+      <trkpt lat="43.8180" lon="6.3320"><time>2024-06-15T08:14:00Z</time></trkpt>
+      <trkpt lat="43.8080" lon="6.3600"><time>2024-06-15T08:18:00Z</time></trkpt>
+      <trkpt lat="43.7950" lon="6.3900"><time>2024-06-15T08:23:00Z</time></trkpt>
+      <trkpt lat="43.7820" lon="6.4200"><time>2024-06-15T08:28:00Z</time></trkpt>
+      <trkpt lat="43.7680" lon="6.4480"><time>2024-06-15T08:33:00Z</time></trkpt>
+      <trkpt lat="43.7520" lon="6.4700"><time>2024-06-15T08:38:00Z</time></trkpt>
+      <trkpt lat="43.7380" lon="6.4950"><time>2024-06-15T08:43:00Z</time></trkpt>
+      <!-- Lac de Sainte-Croix -->
+      <trkpt lat="43.7250" lon="6.5200"><time>2024-06-15T08:48:00Z</time></trkpt>
+      <trkpt lat="43.7120" lon="6.5420"><time>2024-06-15T08:52:00Z</time></trkpt>
+      <trkpt lat="43.6980" lon="6.5650"><time>2024-06-15T08:57:00Z</time></trkpt>
+      <!-- Artuby -->
+      <trkpt lat="43.6850" lon="6.5900"><time>2024-06-15T09:02:00Z</time></trkpt>
+      <trkpt lat="43.6700" lon="6.6180"><time>2024-06-15T09:08:00Z</time></trkpt>
+      <trkpt lat="43.6580" lon="6.6450"><time>2024-06-15T09:14:00Z</time></trkpt>
+      <trkpt lat="43.6420" lon="6.6700"><time>2024-06-15T09:20:00Z</time></trkpt>
+      <trkpt lat="43.6280" lon="6.6950"><time>2024-06-15T09:26:00Z</time></trkpt>
+      <!-- Virage vers le nord -->
+      <trkpt lat="43.6150" lon="6.7180"><time>2024-06-15T09:32:00Z</time></trkpt>
+      <trkpt lat="43.6050" lon="6.7420"><time>2024-06-15T09:37:00Z</time></trkpt>
+      <!-- Pause café (arrêt 12 min, non compté dans moving time) -->
+      <trkpt lat="43.5980" lon="6.7550"><time>2024-06-15T09:40:00Z</time></trkpt>
+      <trkpt lat="43.5978" lon="6.7552"><time>2024-06-15T09:52:00Z</time></trkpt>
+      <!-- Reprise -->
+      <trkpt lat="43.6000" lon="6.7700"><time>2024-06-15T09:55:00Z</time></trkpt>
+      <trkpt lat="43.6120" lon="6.7950"><time>2024-06-15T10:00:00Z</time></trkpt>
+      <trkpt lat="43.6280" lon="6.8200"><time>2024-06-15T10:05:00Z</time></trkpt>
+      <trkpt lat="43.6450" lon="6.8420"><time>2024-06-15T10:10:00Z</time></trkpt>
+      <trkpt lat="43.6620" lon="6.8650"><time>2024-06-15T10:15:00Z</time></trkpt>
+      <!-- Col du Bel Homme -->
+      <trkpt lat="43.6800" lon="6.8880"><time>2024-06-15T10:21:00Z</time></trkpt>
+      <trkpt lat="43.6980" lon="6.9050"><time>2024-06-15T10:27:00Z</time></trkpt>
+      <trkpt lat="43.7150" lon="6.9200"><time>2024-06-15T10:32:00Z</time></trkpt>
+      <trkpt lat="43.7320" lon="6.9350"><time>2024-06-15T10:37:00Z</time></trkpt>
+      <!-- Descente vers Castellane -->
+      <trkpt lat="43.7500" lon="6.9500"><time>2024-06-15T10:42:00Z</time></trkpt>
+      <trkpt lat="43.7650" lon="6.9320"><time>2024-06-15T10:47:00Z</time></trkpt>
+      <trkpt lat="43.7800" lon="6.9120"><time>2024-06-15T10:51:00Z</time></trkpt>
+      <trkpt lat="43.7950" lon="6.8900"><time>2024-06-15T10:55:00Z</time></trkpt>
+      <!-- Retour plein nord -->
+      <trkpt lat="43.8100" lon="6.8680"><time>2024-06-15T10:59:00Z</time></trkpt>
+      <trkpt lat="43.8250" lon="6.8420"><time>2024-06-15T11:04:00Z</time></trkpt>
+      <trkpt lat="43.8400" lon="6.8150"><time>2024-06-15T11:09:00Z</time></trkpt>
+      <trkpt lat="43.8520" lon="6.7900"><time>2024-06-15T11:14:00Z</time></trkpt>
+      <trkpt lat="43.8600" lon="6.7600"><time>2024-06-15T11:19:00Z</time></trkpt>
+      <trkpt lat="43.8620" lon="6.7300"><time>2024-06-15T11:24:00Z</time></trkpt>
+      <trkpt lat="43.8580" lon="6.7000"><time>2024-06-15T11:29:00Z</time></trkpt>
+      <trkpt lat="43.8520" lon="6.6720"><time>2024-06-15T11:34:00Z</time></trkpt>
+      <!-- Route de crête -->
+      <trkpt lat="43.8480" lon="6.6420"><time>2024-06-15T11:38:00Z</time></trkpt>
+      <trkpt lat="43.8480" lon="6.6100"><time>2024-06-15T11:43:00Z</time></trkpt>
+      <trkpt lat="43.8450" lon="6.5800"><time>2024-06-15T11:47:00Z</time></trkpt>
+      <trkpt lat="43.8450" lon="6.5500"><time>2024-06-15T11:51:00Z</time></trkpt>
+      <trkpt lat="43.8450" lon="6.5200"><time>2024-06-15T11:55:00Z</time></trkpt>
+      <trkpt lat="43.8452" lon="6.4900"><time>2024-06-15T11:59:00Z</time></trkpt>
+      <trkpt lat="43.8455" lon="6.4600"><time>2024-06-15T12:03:00Z</time></trkpt>
+      <trkpt lat="43.8455" lon="6.4300"><time>2024-06-15T12:07:00Z</time></trkpt>
+      <trkpt lat="43.8455" lon="6.4000"><time>2024-06-15T12:11:00Z</time></trkpt>
+      <trkpt lat="43.8454" lon="6.3700"><time>2024-06-15T12:15:00Z</time></trkpt>
+      <trkpt lat="43.8453" lon="6.3400"><time>2024-06-15T12:19:00Z</time></trkpt>
+      <trkpt lat="43.8453" lon="6.3100"><time>2024-06-15T12:22:00Z</time></trkpt>
+      <!-- Retour Moustiers -->
+      <trkpt lat="43.8455" lon="6.2800"><time>2024-06-15T12:26:00Z</time></trkpt>
+      <trkpt lat="43.8456" lon="6.2500"><time>2024-06-15T12:29:00Z</time></trkpt>
+      <trkpt lat="43.8456" lon="6.2203"><time>2024-06-15T12:32:00Z</time></trkpt>
+    </trkseg>
+  </trk>
+</gpx>
