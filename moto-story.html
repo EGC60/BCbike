@@ -11,7 +11,6 @@
 
   :root {
     --orange: #ff6b35;
-    --orange-glow: rgba(255, 107, 53, 0.4);
     --bg: #0d0d0f;
     --surface: #1a1a1e;
     --surface2: #242428;
@@ -39,259 +38,146 @@
   }
 
   .logo {
-    width: 32px;
-    height: 32px;
+    width: 32px; height: 32px;
     background: var(--orange);
     border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: flex; align-items: center; justify-content: center;
     font-size: 18px;
   }
 
-  header h1 {
-    font-size: 20px;
-    font-weight: 700;
-    letter-spacing: -0.3px;
-  }
-
-  header span {
-    font-size: 20px;
-    font-weight: 300;
-    color: var(--text-dim);
-  }
+  header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+  header span { font-size: 20px; font-weight: 300; color: var(--text-dim); }
 
   .container {
-    width: 100%;
-    max-width: 480px;
+    width: 100%; max-width: 480px;
     padding: 24px 20px 40px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+    display: flex; flex-direction: column; gap: 20px;
   }
 
-  /* ── Upload zone ── */
   .upload-zone {
     border: 1.5px dashed #444;
     border-radius: var(--radius);
     padding: 40px 20px;
-    text-align: center;
-    cursor: pointer;
-    transition: border-color 0.2s, background 0.2s;
+    text-align: center; cursor: pointer;
+    transition: border-color .2s, background .2s;
     position: relative;
   }
-
   .upload-zone:hover, .upload-zone.drag-over {
     border-color: var(--orange);
-    background: rgba(255, 107, 53, 0.05);
+    background: rgba(255,107,53,.05);
   }
-
   .upload-zone input[type="file"] {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    cursor: pointer;
-    width: 100%;
-    height: 100%;
+    position: absolute; inset: 0; opacity: 0;
+    cursor: pointer; width: 100%; height: 100%;
+  }
+  .upload-icon { font-size: 36px; margin-bottom: 12px; }
+  .upload-zone h2 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .upload-zone p { font-size: 13px; color: var(--text-dim); }
+
+  .error-msg {
+    background: rgba(255,60,60,.1);
+    border: 1px solid rgba(255,60,60,.3);
+    border-radius: 12px; padding: 12px 16px;
+    font-size: 14px; color: #ff6b6b; display: none;
   }
 
-  .upload-icon {
-    font-size: 36px;
-    margin-bottom: 12px;
+  .section-title {
+    font-size: 13px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .8px;
+    color: var(--text-dim); margin-bottom: 10px;
+    display: flex; justify-content: space-between; align-items: center;
   }
+  .section-title span { font-weight: 400; font-size: 12px; }
 
-  .upload-zone h2 {
-    font-size: 16px;
-    font-weight: 600;
-    margin-bottom: 6px;
-  }
-
-  .upload-zone p {
-    font-size: 13px;
-    color: var(--text-dim);
-  }
-
-  /* ── Stats cards ── */
-  .stats-grid {
+  .stat-picker {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-  }
-
-  .stat-card {
-    background: var(--surface);
-    border-radius: 12px;
-    padding: 14px 10px;
-    text-align: center;
-  }
-
-  .stat-value {
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--orange);
-    letter-spacing: -0.5px;
-    line-height: 1;
-    margin-bottom: 4px;
-  }
-
-  .stat-label {
-    font-size: 11px;
-    color: var(--text-dim);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  /* ── Preview ── */
-  .preview-wrapper {
-    position: relative;
-    border-radius: var(--radius);
-    overflow: hidden;
-    background: var(--surface);
-    aspect-ratio: 9/16;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  /* checkered background to show transparency */
-  .preview-wrapper::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image:
-      linear-gradient(45deg, #2a2a2a 25%, transparent 25%),
-      linear-gradient(-45deg, #2a2a2a 25%, transparent 25%),
-      linear-gradient(45deg, transparent 75%, #2a2a2a 75%),
-      linear-gradient(-45deg, transparent 75%, #2a2a2a 75%);
-    background-size: 20px 20px;
-    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
-  }
-
-  .preview-placeholder {
-    position: relative;
-    z-index: 1;
-    text-align: center;
-    color: var(--text-dim);
-    padding: 20px;
-  }
-
-  .preview-placeholder .icon { font-size: 40px; margin-bottom: 12px; }
-  .preview-placeholder p { font-size: 14px; line-height: 1.5; }
-
-  #preview-canvas {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    display: none;
-    z-index: 2;
-  }
-
-  /* ── Customization ── */
-  .section-title {
-    font-size: 13px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    color: var(--text-dim);
-    margin-bottom: 10px;
-  }
-
-  .color-picker {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
-
-  .color-swatch {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    cursor: pointer;
-    border: 3px solid transparent;
-    transition: border-color 0.15s, transform 0.15s;
-  }
-
-  .color-swatch:hover { transform: scale(1.1); }
-  .color-swatch.active { border-color: white; }
-
-  /* ── Buttons ── */
-  button {
-    width: 100%;
-    padding: 16px;
-    border: none;
-    border-radius: var(--radius);
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: opacity 0.15s, transform 0.1s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     gap: 8px;
   }
 
-  button:active { transform: scale(0.98); }
-
-  button:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-  }
-
-  button:disabled:active { transform: none; }
-
-  .btn-primary {
-    background: var(--orange);
-    color: white;
-  }
-
-  .btn-secondary {
-    background: var(--surface2);
-    color: var(--text);
-  }
-
-  /* ── Toast ── */
-  .toast {
-    position: fixed;
-    bottom: 30px;
-    left: 50%;
-    transform: translateX(-50%) translateY(20px);
-    background: #222;
-    color: white;
-    padding: 12px 20px;
-    border-radius: 100px;
-    font-size: 14px;
-    font-weight: 500;
-    opacity: 0;
-    transition: opacity 0.2s, transform 0.2s;
-    pointer-events: none;
-    white-space: nowrap;
-    z-index: 100;
-    border: 1px solid #333;
-  }
-
-  .toast.show {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-
-  /* ── Error ── */
-  .error-msg {
-    background: rgba(255, 60, 60, 0.1);
-    border: 1px solid rgba(255, 60, 60, 0.3);
+  .spc {
+    background: var(--surface);
+    border: 2px solid transparent;
     border-radius: 12px;
-    padding: 12px 16px;
-    font-size: 14px;
-    color: #ff6b6b;
-    display: none;
+    padding: 10px 6px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .15s, background .15s, opacity .15s;
+    user-select: none;
+  }
+  .spc:active { transform: scale(.97); }
+  .spc.selected {
+    border-color: var(--orange);
+    background: rgba(255,107,53,.08);
+  }
+  .spc.unavailable { opacity: .3; cursor: not-allowed; }
+  .spc-icon  { font-size: 16px; margin-bottom: 3px; }
+  .spc-val   { font-size: 15px; font-weight: 700; color: var(--text); line-height: 1.1; }
+  .spc-unit  { font-size: 10px; font-weight: 400; color: var(--orange); margin-left: 1px; }
+  .spc-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .4px; margin-top: 2px; }
+
+  .preview-wrapper {
+    position: relative;
+    border-radius: var(--radius); overflow: hidden;
+    background: var(--surface);
+    aspect-ratio: 9/16;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .preview-wrapper::before {
+    content: ''; position: absolute; inset: 0;
+    background-image:
+      linear-gradient(45deg,#2a2a2a 25%,transparent 25%),
+      linear-gradient(-45deg,#2a2a2a 25%,transparent 25%),
+      linear-gradient(45deg,transparent 75%,#2a2a2a 75%),
+      linear-gradient(-45deg,transparent 75%,#2a2a2a 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+  }
+  .preview-placeholder {
+    position: relative; z-index: 1;
+    text-align: center; color: var(--text-dim); padding: 20px;
+  }
+  .preview-placeholder .icon { font-size: 40px; margin-bottom: 12px; }
+  .preview-placeholder p { font-size: 14px; line-height: 1.5; }
+  #preview-canvas {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: contain; display: none; z-index: 2;
   }
 
-  .actions {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+  .color-picker { display: flex; gap: 10px; flex-wrap: wrap; }
+  .color-swatch {
+    width: 36px; height: 36px; border-radius: 50%;
+    cursor: pointer; border: 3px solid transparent;
+    transition: border-color .15s, transform .15s;
   }
+  .color-swatch:hover { transform: scale(1.1); }
+  .color-swatch.active { border-color: white; }
+
+  .actions { display: flex; flex-direction: column; gap: 10px; }
+  button {
+    width: 100%; padding: 16px; border: none;
+    border-radius: var(--radius); font-size: 16px; font-weight: 600;
+    cursor: pointer; transition: opacity .15s, transform .1s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  button:active { transform: scale(.98); }
+  button:disabled { opacity: .3; cursor: not-allowed; }
+  button:disabled:active { transform: none; }
+  .btn-primary  { background: var(--orange); color: white; }
+  .btn-secondary { background: var(--surface2); color: var(--text); }
+
+  .toast {
+    position: fixed; bottom: 30px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #222; color: white;
+    padding: 12px 20px; border-radius: 100px;
+    font-size: 14px; font-weight: 500;
+    opacity: 0; transition: opacity .2s, transform .2s;
+    pointer-events: none; white-space: nowrap;
+    z-index: 100; border: 1px solid #333;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 </style>
 </head>
 <body>
@@ -307,24 +193,17 @@
     <input type="file" id="fileInput" accept=".gpx">
     <div class="upload-icon">📍</div>
     <h2>Importer un fichier GPX</h2>
-    <p>Calimoto · Kurviger · GeoRide · Wikiloc<br>Glisse ou clique pour choisir</p>
+    <p>Garmin Connect · Calimoto · Strava · Wikiloc<br>Glisse ou clique pour choisir</p>
   </div>
 
   <div class="error-msg" id="errorMsg"></div>
 
-  <div class="stats-grid" id="statsGrid" style="display:none">
-    <div class="stat-card">
-      <div class="stat-value" id="statDist">—</div>
-      <div class="stat-label">km</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-value" id="statDur">—</div>
-      <div class="stat-label">durée</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-value" id="statSpeed">—</div>
-      <div class="stat-label">km/h moy.</div>
-    </div>
+  <div id="statPickerSection" style="display:none">
+    <p class="section-title">
+      Stats à afficher
+      <span id="statCountLabel">0 / 3 sélectionnées</span>
+    </p>
+    <div class="stat-picker" id="statPicker"></div>
   </div>
 
   <div class="preview-wrapper" id="previewWrapper">
@@ -348,12 +227,8 @@
   </div>
 
   <div class="actions" id="actionButtons" style="display:none">
-    <button class="btn-primary" id="shareBtn">
-      <span>↑</span> Partager la story
-    </button>
-    <button class="btn-secondary" id="resetBtn">
-      Nouvelle sortie
-    </button>
+    <button class="btn-primary" id="shareBtn">↑ Partager la story</button>
+    <button class="btn-secondary" id="resetBtn">Nouvelle sortie</button>
   </div>
 
 </div>
@@ -362,26 +237,49 @@
 <canvas id="render-canvas" style="display:none"></canvas>
 
 <script>
+const STAT_DEFS = [
+  { id: 'dist',     label: 'Distance',    unit: 'km',   icon: '📍' },
+  { id: 'avgSpeed', label: 'Vitesse moy.', unit: 'km/h', icon: '⚡️' },
+  { id: 'maxSpeed', label: 'Vitesse max', unit: 'km/h', icon: '🚀' },
+  { id: 'dur',      label: 'Durée',       unit: '',     icon: '⏱' },
+  { id: 'elevGain', label: 'Dénivelé +',  unit: 'm',    icon: '📈' },
+  { id: 'maxAlt',   label: 'Altitude max',unit: 'm',    icon: '⛰' },
+  { id: 'avgHr',    label: 'FC moyenne',  unit: 'bpm',  icon: '❤️' },
+  { id: 'maxHr',    label: 'FC max',      unit: 'bpm',  icon: '💓' },
+  { id: 'avgCad',   label: 'Cadence',     unit: 'spm',  icon: '👟' },
+];
+
 const STORY_W = 1080;
 const STORY_H = 1920;
 const PADDING = 0.12;
 
-let currentPoints = [];
-let currentStats  = {};
-let traceColor    = '#ff6b35';
-let renderCanvas  = document.getElementById('render-canvas');
-let previewCanvas = document.getElementById('preview-canvas');
+let currentPoints   = [];
+let currentStats    = {};
+let selectedStats   = ['dist', 'avgSpeed', 'dur'];
+let traceColor      = '#ff6b35';
+const renderCanvas  = document.getElementById('render-canvas');
+const previewCanvas = document.getElementById('preview-canvas');
+
+function getExtVal(pt, name) {
+  const all = pt.getElementsByTagName('*');
+  for (const el of all) {
+    if (el.localName === name) return parseFloat(el.textContent);
+  }
+  return null;
+}
 
 function parseGPX(text) {
   const xml = new DOMParser().parseFromString(text, 'text/xml');
-  const parseErr = xml.querySelector('parsererror');
-  if (parseErr) throw new Error('Fichier GPX invalide ou corrompu.');
+  if (xml.querySelector('parsererror')) throw new Error('Fichier GPX invalide ou corrompu.');
   const trkpts = [...xml.querySelectorAll('trkpt')];
   if (trkpts.length < 2) throw new Error('Le fichier GPX doit contenir au moins 2 points de tracé.');
   return trkpts.map(pt => ({
     lat:  parseFloat(pt.getAttribute('lat')),
     lon:  parseFloat(pt.getAttribute('lon')),
     time: pt.querySelector('time') ? new Date(pt.querySelector('time').textContent) : null,
+    ele:  pt.querySelector('ele')  ? parseFloat(pt.querySelector('ele').textContent) : null,
+    hr:   getExtVal(pt, 'hr'),
+    cad:  getExtVal(pt, 'cad'),
   }));
 }
 
@@ -395,24 +293,47 @@ function haversine(lat1, lon1, lat2, lon2) {
 }
 
 function calcStats(points) {
-  let totalDist = 0;
-  let movingMs  = 0;
+  let totalDist = 0, movingMs = 0, maxSpeedKmh = 0, elevGain = 0;
+  const hrVals = [], cadVals = [], eleVals = [];
+
   for (let i = 1; i < points.length; i++) {
     const d = haversine(points[i-1].lat, points[i-1].lon, points[i].lat, points[i].lon);
     totalDist += d;
     if (points[i].time && points[i-1].time) {
       const dtMs = points[i].time - points[i-1].time;
       const dtH  = dtMs / 3600000;
-      const segSpeedKmh = dtH > 0 ? d / dtH : 0;
-      if (segSpeedKmh > 3) movingMs += dtMs;
+      if (dtH > 0) {
+        const spd = d / dtH;
+        if (spd > 3) movingMs += dtMs;
+        if (dtMs >= 2000 && spd < 350) maxSpeedKmh = Math.max(maxSpeedKmh, spd);
+      }
+    }
+    if (points[i].ele !== null && points[i-1].ele !== null) {
+      const diff = points[i].ele - points[i-1].ele;
+      if (diff > 2) elevGain += diff;
     }
   }
+
+  for (const p of points) {
+    if (p.ele !== null) eleVals.push(p.ele);
+    if (p.hr  !== null) hrVals.push(p.hr);
+    if (p.cad !== null && p.cad > 0) cadVals.push(p.cad);
+  }
+
   const movingH  = movingMs / 3600000;
   const avgSpeed = movingH > 0.01 ? totalDist / movingH : null;
+  const avg = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+
   return {
     distKm:   Math.round(totalDist * 10) / 10,
     movingMs,
     avgSpeed: avgSpeed ? Math.round(avgSpeed) : null,
+    maxSpeed: maxSpeedKmh > 0 ? Math.round(maxSpeedKmh) : null,
+    maxAlt:   eleVals.length ? Math.round(Math.max(...eleVals)) : null,
+    elevGain: elevGain > 5   ? Math.round(elevGain) : null,
+    avgHr:    hrVals.length  ? Math.round(avg(hrVals)) : null,
+    maxHr:    hrVals.length  ? Math.round(Math.max(...hrVals)) : null,
+    avgCad:   cadVals.length ? Math.round(avg(cadVals)) : null,
   };
 }
 
@@ -420,16 +341,79 @@ function formatDuration(ms) {
   if (!ms || ms <= 0) return '—';
   const h   = Math.floor(ms / 3600000);
   const min = Math.floor((ms % 3600000) / 60000);
-  if (h === 0) return `${min}min`;
+  if (h === 0)   return `${min}min`;
   if (min === 0) return `${h}h`;
   return `${h}h${String(min).padStart(2, '0')}`;
 }
 
+function getStatDisplay(id, stats) {
+  const map = {
+    dist:     { value: stats.distKm ?? '—',            unit: 'km'   },
+    dur:      { value: formatDuration(stats.movingMs), unit: ''     },
+    avgSpeed: { value: stats.avgSpeed ?? '—',          unit: 'km/h' },
+    maxSpeed: { value: stats.maxSpeed ?? '—',          unit: 'km/h' },
+    maxAlt:   { value: stats.maxAlt   ?? '—',          unit: 'm'    },
+    elevGain: { value: stats.elevGain ?? '—',          unit: 'm'    },
+    avgHr:    { value: stats.avgHr    ?? '—',          unit: 'bpm'  },
+    maxHr:    { value: stats.maxHr    ?? '—',          unit: 'bpm'  },
+    avgCad:   { value: stats.avgCad   ?? '—',          unit: 'spm'  },
+  };
+  return map[id] ?? { value: '—', unit: '' };
+}
+
+function isAvailable(id, stats) {
+  if (id === 'dist') return stats.distKm !== null && stats.distKm !== undefined;
+  if (id === 'dur')  return stats.movingMs > 0;
+  return stats[id] !== null && stats[id] !== undefined;
+}
+
+function autoSelect(stats) {
+  const priority = ['dist', 'avgSpeed', 'maxSpeed', 'elevGain', 'maxAlt', 'avgHr', 'maxHr', 'dur', 'avgCad'];
+  selectedStats = priority.filter(id => isAvailable(id, stats)).slice(0, 3);
+  if (selectedStats.length === 0) selectedStats = ['dist'];
+}
+
+function buildStatPicker(stats) {
+  const picker = document.getElementById('statPicker');
+  picker.innerHTML = '';
+  for (const def of STAT_DEFS) {
+    const avail    = isAvailable(def.id, stats);
+    const selected = selectedStats.includes(def.id);
+    const disp     = getStatDisplay(def.id, stats);
+    const card = document.createElement('div');
+    card.className = `spc${selected ? ' selected' : ''}${!avail ? ' unavailable' : ''}`;
+    card.dataset.id = def.id;
+    card.innerHTML = `
+      <div class="spc-icon">${def.icon}</div>
+      <div class="spc-val">${disp.value}<span class="spc-unit">${avail ? disp.unit : ''}</span></div>
+      <div class="spc-label">${def.label}</div>
+    `;
+    if (avail) card.addEventListener('click', () => toggleStat(def.id, stats));
+    picker.appendChild(card);
+  }
+  updateStatCountLabel();
+}
+
+function toggleStat(id, stats) {
+  if (selectedStats.includes(id)) {
+    if (selectedStats.length > 1) selectedStats = selectedStats.filter(s => s !== id);
+    else showToast('Sélectionne au moins 1 stat');
+  } else {
+    if (selectedStats.length < 3) selectedStats.push(id);
+    else showToast('Maximum 3 stats — désélectionne-en une d\'abord');
+  }
+  buildStatPicker(stats);
+  if (currentPoints.length) updatePreview();
+}
+
+function updateStatCountLabel() {
+  document.getElementById('statCountLabel').textContent = `${selectedStats.length} / 3 sélectionnées`;
+}
+
 function renderStory(points, stats, color) {
-  const canvas = renderCanvas;
-  canvas.width  = STORY_W;
-  canvas.height = STORY_H;
-  const ctx = canvas.getContext('2d');
+  renderCanvas.width  = STORY_W;
+  renderCanvas.height = STORY_H;
+  const ctx = renderCanvas.getContext('2d');
   ctx.clearRect(0, 0, STORY_W, STORY_H);
 
   let minLat = Infinity, maxLat = -Infinity;
@@ -440,107 +424,67 @@ function renderStory(points, stats, color) {
   }
 
   const routeAreaH = STORY_H * 0.72;
-  const pad        = Math.min(STORY_W, routeAreaH) * PADDING;
-  const drawW      = STORY_W - pad * 2;
-  const drawH      = routeAreaH - pad * 2;
-  const latSpan    = maxLat - minLat || 0.001;
-  const lonSpan    = maxLon - minLon || 0.001;
-  const scale      = Math.min(drawW / lonSpan, drawH / latSpan);
-  const routeW     = lonSpan * scale;
-  const routeH     = latSpan * scale;
-  const offsetX    = (STORY_W - routeW) / 2;
-  const offsetY    = pad + (drawH - routeH) / 2;
+  const pad   = Math.min(STORY_W, routeAreaH) * PADDING;
+  const drawW = STORY_W - pad * 2;
+  const drawH = routeAreaH - pad * 2;
+  const scale = Math.min(drawW / (maxLon - minLon || .001), drawH / (maxLat - minLat || .001));
+  const offX  = (STORY_W - (maxLon - minLon) * scale) / 2;
+  const offY  = pad + (drawH - (maxLat - minLat) * scale) / 2;
 
-  const toCanvas = (lat, lon) => ({
-    x: offsetX + (lon - minLon) * scale,
-    y: offsetY + (maxLat - lat) * scale,
-  });
+  const toC = (lat, lon) => ({ x: offX + (lon - minLon) * scale, y: offY + (maxLat - lat) * scale });
 
-  const passes = [
-    { width: 24, alpha: 0.08 },
-    { width: 12, alpha: 0.18 },
-    { width:  4, alpha: 1.00 },
-  ];
-
-  for (const pass of passes) {
+  for (const pass of [{ w: 24, a: .08 }, { w: 12, a: .18 }, { w: 4, a: 1 }]) {
     ctx.beginPath();
-    const first = toCanvas(points[0].lat, points[0].lon);
-    ctx.moveTo(first.x, first.y);
-    for (let i = 1; i < points.length; i++) {
-      const p = toCanvas(points[i].lat, points[i].lon);
-      ctx.lineTo(p.x, p.y);
-    }
-    ctx.strokeStyle = color;
-    ctx.globalAlpha = pass.alpha;
-    ctx.lineWidth   = pass.width;
-    ctx.lineCap     = 'round';
-    ctx.lineJoin    = 'round';
-    ctx.stroke();
+    const f = toC(points[0].lat, points[0].lon);
+    ctx.moveTo(f.x, f.y);
+    for (let i = 1; i < points.length; i++) { const p = toC(points[i].lat, points[i].lon); ctx.lineTo(p.x, p.y); }
+    ctx.strokeStyle = color; ctx.globalAlpha = pass.a;
+    ctx.lineWidth = pass.w; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke();
   }
   ctx.globalAlpha = 1;
 
-  const startPt = toCanvas(points[0].lat, points[0].lon);
-  ctx.beginPath();
-  ctx.arc(startPt.x, startPt.y, 14, 0, Math.PI * 2);
-  ctx.fillStyle = color;
-  ctx.globalAlpha = 0.25;
-  ctx.fill();
-  ctx.globalAlpha = 1;
-  ctx.beginPath();
-  ctx.arc(startPt.x, startPt.y, 7, 0, Math.PI * 2);
-  ctx.fillStyle = color;
-  ctx.fill();
+  const sp = toC(points[0].lat, points[0].lon);
+  ctx.beginPath(); ctx.arc(sp.x, sp.y, 14, 0, Math.PI*2); ctx.fillStyle = color; ctx.globalAlpha = .25; ctx.fill(); ctx.globalAlpha = 1;
+  ctx.beginPath(); ctx.arc(sp.x, sp.y, 7, 0, Math.PI*2); ctx.fillStyle = color; ctx.fill();
 
   const panelY = routeAreaH;
   const panelH = STORY_H - panelY;
   const grad = ctx.createLinearGradient(0, panelY - 80, 0, STORY_H);
-  grad.addColorStop(0, 'rgba(0,0,0,0)');
-  grad.addColorStop(0.35, 'rgba(0,0,0,0.65)');
-  grad.addColorStop(1, 'rgba(0,0,0,0.82)');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, panelY - 80, STORY_W, panelH + 80);
+  grad.addColorStop(0, 'rgba(0,0,0,0)'); grad.addColorStop(.35, 'rgba(0,0,0,.65)'); grad.addColorStop(1, 'rgba(0,0,0,.82)');
+  ctx.fillStyle = grad; ctx.fillRect(0, panelY - 80, STORY_W, panelH + 80);
 
-  const distText = stats.distKm ? `${stats.distKm} km` : '— km';
-  ctx.fillStyle = 'white';
-  ctx.font = `800 ${STORY_W * 0.17}px -apple-system, SF Pro Display, sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(distText, STORY_W / 2, panelY + panelH * 0.28);
+  const count = selectedStats.length;
+  const colW  = STORY_W / count;
+  ctx.strokeStyle = 'rgba(255,255,255,.12)'; ctx.lineWidth = 1.5;
+  for (let i = 1; i < count; i++) {
+    ctx.beginPath(); ctx.moveTo(colW * i, panelY + panelH * .18); ctx.lineTo(colW * i, panelY + panelH * .82); ctx.stroke();
+  }
 
-  const divW = STORY_W * 0.4;
-  ctx.beginPath();
-  ctx.moveTo(STORY_W / 2 - divW / 2, panelY + panelH * 0.48);
-  ctx.lineTo(STORY_W / 2 + divW / 2, panelY + panelH * 0.48);
-  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-  ctx.lineWidth = 1.5;
-  ctx.globalAlpha = 1;
-  ctx.stroke();
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (let i = 0; i < count; i++) {
+    const def  = STAT_DEFS.find(d => d.id === selectedStats[i]);
+    const disp = getStatDisplay(def.id, stats);
+    const x    = colW * i + colW / 2;
+    ctx.font = `700 ${Math.floor(STORY_W * .085)}px -apple-system, SF Pro Display, sans-serif`;
+    ctx.fillStyle = 'white';
+    ctx.fillText(String(disp.value), x, panelY + panelH * .32);
+    if (disp.unit) {
+      ctx.font = `500 ${Math.floor(STORY_W * .038)}px -apple-system, SF Pro Display, sans-serif`;
+      ctx.fillStyle = color;
+      ctx.fillText(disp.unit, x, panelY + panelH * .52);
+    }
+    ctx.font = `400 ${Math.floor(STORY_W * .032)}px -apple-system, SF Pro Display, sans-serif`;
+    ctx.fillStyle = 'rgba(255,255,255,.4)';
+    ctx.fillText(def.label.toUpperCase(), x, panelY + panelH * .70);
+  }
 
-  const durText   = formatDuration(stats.movingMs);
-  const speedText = stats.avgSpeed ? `${stats.avgSpeed} km/h` : '—';
-  ctx.font = `600 ${STORY_W * 0.058}px -apple-system, SF Pro Display, sans-serif`;
-  ctx.fillStyle = 'rgba(255,255,255,0.85)';
-  ctx.textAlign = 'center';
-  ctx.fillText(durText,   STORY_W * 0.3,  panelY + panelH * 0.63);
-  ctx.fillText(speedText, STORY_W * 0.7,  panelY + panelH * 0.63);
-
-  ctx.font = `400 ${STORY_W * 0.034}px -apple-system, SF Pro Display, sans-serif`;
-  ctx.fillStyle = 'rgba(255,255,255,0.45)';
-  ctx.fillText('DURÉE',   STORY_W * 0.3,  panelY + panelH * 0.76);
-  ctx.fillText('MOYENNE', STORY_W * 0.7,  panelY + panelH * 0.76);
-
-  ctx.beginPath();
-  ctx.arc(STORY_W / 2, panelY + panelH * 0.91, 4, 0, Math.PI * 2);
-  ctx.fillStyle = color;
-  ctx.fill();
+  ctx.beginPath(); ctx.arc(STORY_W / 2, panelY + panelH * .88, 4, 0, Math.PI*2); ctx.fillStyle = color; ctx.fill();
 }
 
 function updatePreview() {
   renderStory(currentPoints, currentStats, traceColor);
   const wrapper = document.getElementById('previewWrapper');
-  const maxW = wrapper.clientWidth;
-  const maxH = wrapper.clientHeight;
-  const scale = Math.min(maxW / STORY_W, maxH / STORY_H);
+  const scale = Math.min(wrapper.clientWidth / STORY_W, wrapper.clientHeight / STORY_H);
   previewCanvas.width  = STORY_W * scale;
   previewCanvas.height = STORY_H * scale;
   const ctx = previewCanvas.getContext('2d');
@@ -550,55 +494,37 @@ function updatePreview() {
 }
 
 function handleFile(file) {
-  if (!file || !file.name.toLowerCase().endsWith('.gpx')) {
-    showError('Merci de choisir un fichier .gpx');
-    return;
-  }
+  if (!file || !file.name.toLowerCase().endsWith('.gpx')) { showError('Merci de choisir un fichier .gpx'); return; }
   hideError();
   const reader = new FileReader();
   reader.onload = e => {
     try {
       const points = parseGPX(e.target.result);
       const stats  = calcStats(points);
-      currentPoints = points;
-      currentStats  = stats;
-      document.getElementById('statDist').textContent  = stats.distKm ?? '—';
-      document.getElementById('statDur').textContent   = formatDuration(stats.movingMs);
-      document.getElementById('statSpeed').textContent = stats.avgSpeed ?? '—';
-      document.getElementById('statsGrid').style.display        = 'grid';
-      document.getElementById('customizeSection').style.display = 'block';
-      document.getElementById('actionButtons').style.display    = 'flex';
+      currentPoints = points; currentStats = stats;
+      autoSelect(stats); buildStatPicker(stats);
+      document.getElementById('statPickerSection').style.display = 'block';
+      document.getElementById('customizeSection').style.display  = 'block';
+      document.getElementById('actionButtons').style.display     = 'flex';
       document.getElementById('previewPlaceholder').style.display = 'none';
       updatePreview();
-    } catch (err) {
-      showError(err.message);
-    }
+    } catch (err) { showError(err.message); }
   };
   reader.readAsText(file);
 }
 
 const uploadZone = document.getElementById('uploadZone');
 const fileInput  = document.getElementById('fileInput');
-
 fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
-
-uploadZone.addEventListener('dragover', e => {
-  e.preventDefault();
-  uploadZone.classList.add('drag-over');
-});
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
 uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
-uploadZone.addEventListener('drop', e => {
-  e.preventDefault();
-  uploadZone.classList.remove('drag-over');
-  handleFile(e.dataTransfer.files[0]);
-});
+uploadZone.addEventListener('drop', e => { e.preventDefault(); uploadZone.classList.remove('drag-over'); handleFile(e.dataTransfer.files[0]); });
 
 document.getElementById('colorPicker').addEventListener('click', e => {
-  const swatch = e.target.closest('.color-swatch');
-  if (!swatch) return;
+  const sw = e.target.closest('.color-swatch');
+  if (!sw) return;
   document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
-  swatch.classList.add('active');
-  traceColor = swatch.dataset.color;
+  sw.classList.add('active'); traceColor = sw.dataset.color;
   if (currentPoints.length) updatePreview();
 });
 
@@ -608,52 +534,30 @@ document.getElementById('shareBtn').addEventListener('click', async () => {
   renderCanvas.toBlob(async blob => {
     const file = new File([blob], 'moto-story.png', { type: 'image/png' });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      try {
-        await navigator.share({ files: [file], title: 'Ma sortie moto' });
-        return;
-      } catch (err) {
-        if (err.name === 'AbortError') return;
-      }
+      try { await navigator.share({ files: [file], title: 'Ma sortie' }); return; }
+      catch (err) { if (err.name === 'AbortError') return; }
     }
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href     = url;
-    a.download = 'moto-story.png';
-    a.click();
+    a.href = url; a.download = 'moto-story.png'; a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
     showToast('Image téléchargée ✓');
   }, 'image/png');
 });
 
 document.getElementById('resetBtn').addEventListener('click', () => {
-  currentPoints = [];
-  currentStats  = {};
-  fileInput.value = '';
-  document.getElementById('statsGrid').style.display        = 'none';
-  document.getElementById('customizeSection').style.display = 'none';
-  document.getElementById('actionButtons').style.display    = 'none';
+  currentPoints = []; currentStats = {}; fileInput.value = '';
+  ['statPickerSection','customizeSection','actionButtons'].forEach(id => document.getElementById(id).style.display = 'none');
   document.getElementById('previewPlaceholder').style.display = 'block';
-  previewCanvas.style.display = 'none';
-  hideError();
+  previewCanvas.style.display = 'none'; hideError();
 });
 
-function showError(msg) {
-  const el = document.getElementById('errorMsg');
-  el.textContent = msg;
-  el.style.display = 'block';
-}
-
-function hideError() {
-  document.getElementById('errorMsg').style.display = 'none';
-}
-
+function showError(msg) { const el = document.getElementById('errorMsg'); el.textContent = msg; el.style.display = 'block'; }
+function hideError() { document.getElementById('errorMsg').style.display = 'none'; }
 let toastTimer;
 function showToast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+  const el = document.getElementById('toast'); el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
 }
 </script>
 </body>
