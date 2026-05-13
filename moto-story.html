@@ -152,6 +152,18 @@
     object-fit: contain; display: none; z-index: 2;
   }
 
+  /* ── Custom text input ── */
+  .text-input {
+    width: 100%; padding: 12px 14px;
+    background: var(--surface); border: 1.5px solid #333;
+    border-radius: 12px; color: var(--text);
+    font-size: 15px; font-family: inherit;
+    transition: border-color .15s;
+    outline: none;
+  }
+  .text-input:focus { border-color: var(--orange); }
+  .text-input::placeholder { color: var(--text-dim); }
+
   /* ── Color picker ── */
   .color-picker { display: flex; gap: 10px; flex-wrap: wrap; }
   .color-swatch {
@@ -273,6 +285,14 @@
     <div class="stat-picker" id="statPicker"></div>
   </div>
 
+  <!-- Custom text -->
+  <div id="customTextSection" style="display:none">
+    <p class="section-title">Nom de la sortie</p>
+    <input type="text" id="customTextInput" class="text-input"
+      placeholder="Ex : Gorges du Verdon · Juin 2024"
+      maxlength="60">
+  </div>
+
   <!-- Preview -->
   <!-- Format picker -->
   <div id="formatSection" style="display:none">
@@ -367,7 +387,7 @@
 <canvas id="render-canvas" style="display:none"></canvas>
 
 <script>
-// ── Stat definitions ──────────────────────────────────────────────────
+// ── Stat definitions ──────────────────────────────────────────────────────────
 const STAT_DEFS = [
   { id: 'dist',     label: 'Distance',    unit: 'km',   icon: '📍' },
   { id: 'avgSpeed', label: 'Vitesse moy.', unit: 'km/h', icon: '⚡️' },
@@ -377,15 +397,15 @@ const STAT_DEFS = [
   { id: 'maxAlt',   label: 'Altitude max',unit: 'm',    icon: '⛰' },
   { id: 'avgHr',    label: 'FC moyenne',  unit: 'bpm',  icon: '❤️' },
   { id: 'maxHr',    label: 'FC max',      unit: 'bpm',  icon: '💓' },
-  { id: 'avgCad',   label: 'Cadence',     unit: 'spm',  icon: '👟' },
+  { id: 'avgCad',   label: 'Cadence',     unit: 'spm',  icon: '💟' },
 ];
 
-// ── Constants ──────────────────────────────────────────────────────
+// ── Constants ──────────────────────────────────────────────────────────
 const STORY_W = 1080;
 const STORY_H = 1920;
 const PADDING = 0.12;
 
-// ── State ────────────────────────────────────────────────────────
+// ── State ──────────────────────────────────────────────────────────
 let currentPoints   = [];
 let currentStats    = {};
 let selectedStats   = ['dist', 'avgSpeed', 'dur'];
@@ -393,10 +413,11 @@ let traceColor      = '#ff6b35';
 let lineWidth       = 8;
 let layout          = 'bottom';
 let format          = 'story';
+let customText      = '';
 const renderCanvas  = document.getElementById('render-canvas');
 const previewCanvas = document.getElementById('preview-canvas');
 
-// ── GPX Parsing ───────────────────────────────────────────────────
+// ── GPX Parsing ──────────────────────────────────────────────────────────
 function getExtVal(pt, name) {
   // Works regardless of namespace prefix by matching localName
   const all = pt.getElementsByTagName('*');
@@ -422,7 +443,7 @@ function parseGPX(text) {
   }));
 }
 
-// ── Haversine ──────────────────────────────────────────────────────
+// ── Haversine ──────────────────────────────────────────────────────────
 function haversine(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const φ1 = lat1 * Math.PI / 180, φ2 = lat2 * Math.PI / 180;
@@ -515,14 +536,14 @@ function isAvailable(id, stats) {
   return v !== null && v !== undefined;
 }
 
-// ── Auto-select best stats ──────────────────────────────────────────────────
+// ── Auto-select best stats ──────────────────────────────────────────────────────────
 function autoSelect(stats) {
   const priority = ['dist', 'avgSpeed', 'maxSpeed', 'elevGain', 'maxAlt', 'avgHr', 'maxHr', 'dur', 'avgCad'];
   selectedStats = priority.filter(id => isAvailable(id, stats)).slice(0, 3);
   if (selectedStats.length === 0) selectedStats = ['dist'];
 }
 
-// ── Stat picker UI ───────────────────────────────────────────────────────
+// ── Stat picker UI ──────────────────────────────────────────────────────────
 function buildStatPicker(stats) {
   const picker = document.getElementById('statPicker');
   picker.innerHTML = '';
@@ -563,7 +584,7 @@ function updateStatCountLabel() {
   document.getElementById('statCountLabel').textContent = `${selectedStats.length} / 3 sélectionnées`;
 }
 
-// ── Canvas rendering ─────────────────────────────────────────────────────
+// ── Canvas rendering ──────────────────────────────────────────────────────────
 function renderStory(points, stats, color) {
   const H = format === 'post' ? STORY_W : STORY_H;
   renderCanvas.width  = STORY_W;
@@ -638,6 +659,27 @@ function renderStory(points, stats, color) {
     ctx.fillRect(0, panelY - fade, STORY_W, panelH + fade + 1);
   }
 
+  // Custom ride name (top of image)
+  if (customText.trim()) {
+    const label = customText.trim().toUpperCase();
+    const fontSize = Math.floor(STORY_W * 0.034);
+    ctx.font = `600 ${fontSize}px -apple-system, SF Pro Display, sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const textY = layout === 'top' ? panelH + fontSize * 2 : fontSize * 2;
+    // Subtle background pill
+    const metrics = ctx.measureText(label);
+    const pw = metrics.width + fontSize * 1.4;
+    const ph = fontSize * 1.8;
+    const px = STORY_W / 2 - pw / 2;
+    const py = textY - ph / 2;
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+    ctx.beginPath();
+    ctx.roundRect(px, py, pw, ph, ph / 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.fillText(label, STORY_W / 2, textY);
+  }
+
   // Stats
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
 
@@ -703,7 +745,7 @@ function updatePreview() {
   previewCanvas.style.display = 'block';
 }
 
-// ── File handling ──────────────────────────────────────────────────────
+// ── File handling ──────────────────────────────────────────────────────────
 function handleFile(file) {
   if (!file || !file.name.toLowerCase().endsWith('.gpx')) {
     showError('Merci de choisir un fichier .gpx'); return;
@@ -720,10 +762,11 @@ function handleFile(file) {
       autoSelect(stats);
       buildStatPicker(stats);
 
-      document.getElementById('statPickerSection').style.display = 'block';
-      document.getElementById('formatSection').style.display     = 'block';
-      document.getElementById('customizeSection').style.display  = 'block';
-      document.getElementById('actionButtons').style.display     = 'flex';
+      document.getElementById('statPickerSection').style.display  = 'block';
+      document.getElementById('customTextSection').style.display  = 'block';
+      document.getElementById('formatSection').style.display      = 'block';
+      document.getElementById('customizeSection').style.display   = 'block';
+      document.getElementById('actionButtons').style.display      = 'flex';
       document.getElementById('previewPlaceholder').style.display = 'none';
 
       updatePreview();
@@ -732,7 +775,7 @@ function handleFile(file) {
   reader.readAsText(file);
 }
 
-// ── Upload zone ─────────────────────────────────────────────────────────
+// ── Upload zone ──────────────────────────────────────────────────────────
 const uploadZone = document.getElementById('uploadZone');
 const fileInput  = document.getElementById('fileInput');
 
@@ -744,7 +787,7 @@ uploadZone.addEventListener('drop', e => {
   handleFile(e.dataTransfer.files[0]);
 });
 
-// ── Color picker ────────────────────────────────────────────────────────
+// ── Color picker ──────────────────────────────────────────────────────────
 document.getElementById('colorPicker').addEventListener('click', e => {
   const sw = e.target.closest('.color-swatch');
   if (!sw) return;
@@ -781,7 +824,12 @@ document.getElementById('formatPicker').addEventListener('click', e => {
   if (currentPoints.length) updatePreview();
 });
 
-// ── Share ────────────────────────────────────────────────────────────
+document.getElementById('customTextInput').addEventListener('input', e => {
+  customText = e.target.value;
+  if (currentPoints.length) updatePreview();
+});
+
+// ── Share ──────────────────────────────────────────────────────────
 document.getElementById('shareBtn').addEventListener('click', async () => {
   if (!currentPoints.length) return;
   renderStory(currentPoints, currentStats, traceColor);
@@ -799,13 +847,15 @@ document.getElementById('shareBtn').addEventListener('click', async () => {
   }, 'image/png');
 });
 
-// ── Reset ──────────────────────────────────────────────────────────────
+// ── Reset ──────────────────────────────────────────────────────────
 document.getElementById('resetBtn').addEventListener('click', () => {
   currentPoints = []; currentStats = {};
   fileInput.value = '';
-  ['statPickerSection','formatSection','customizeSection','actionButtons'].forEach(id =>
+  ['statPickerSection','customTextSection','formatSection','customizeSection','actionButtons'].forEach(id =>
     document.getElementById(id).style.display = 'none'
   );
+  customText = '';
+  document.getElementById('customTextInput').value = '';
   document.getElementById('previewWrapper').style.aspectRatio = '9/16';
   format = 'story';
   document.querySelectorAll('.format-btn').forEach(b => b.classList.toggle('active', b.dataset.format === 'story'));
@@ -814,7 +864,7 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   hideError();
 });
 
-// ── Helpers ──────────────────────────────────────────────────────────────
+// ── Helpers ──────────────────────────────────────────────────────────
 function showError(msg) {
   const el = document.getElementById('errorMsg');
   el.textContent = msg; el.style.display = 'block';
