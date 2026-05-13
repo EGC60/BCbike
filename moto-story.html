@@ -162,6 +162,25 @@
   .color-swatch:hover { transform: scale(1.1); }
   .color-swatch.active { border-color: white; }
 
+  /* ── Layout picker ── */
+  .layout-picker { display: flex; gap: 8px; }
+  .layout-btn {
+    flex: 1; padding: 8px 6px;
+    background: var(--surface); border: 2px solid transparent;
+    border-radius: 10px; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    transition: border-color .15s, background .15s;
+  }
+  .layout-btn.active { border-color: var(--orange); background: rgba(255,107,53,.08); }
+  .layout-preview {
+    width: 22px; height: 36px;
+    border-radius: 3px; overflow: hidden;
+    position: relative; background: #111; border: 1px solid #333;
+  }
+  .lp-route { position: absolute; left: 0; right: 0; background: #2a2a2a; }
+  .lp-panel { position: absolute; left: 0; right: 0; background: rgba(255,107,53,.6); }
+  .layout-btn-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .4px; }
+
   /* ── Line width picker ── */
   .width-picker { display: flex; gap: 8px; }
   .width-btn {
@@ -251,6 +270,31 @@
       <div class="color-swatch" style="background:#ec4899" data-color="#ec4899"></div>
     </div>
 
+    <p class="section-title" style="margin-top:16px">Position des stats</p>
+    <div class="layout-picker" id="layoutPicker">
+      <div class="layout-btn active" data-layout="bottom">
+        <div class="layout-preview">
+          <div class="lp-route" style="top:0;height:65%"></div>
+          <div class="lp-panel" style="bottom:0;height:35%"></div>
+        </div>
+        <span class="layout-btn-label">En bas</span>
+      </div>
+      <div class="layout-btn" data-layout="top">
+        <div class="layout-preview">
+          <div class="lp-panel" style="top:0;height:35%"></div>
+          <div class="lp-route" style="bottom:0;height:65%"></div>
+        </div>
+        <span class="layout-btn-label">En haut</span>
+      </div>
+      <div class="layout-btn" data-layout="minimal">
+        <div class="layout-preview">
+          <div class="lp-route" style="top:0;height:88%"></div>
+          <div class="lp-panel" style="bottom:0;height:12%"></div>
+        </div>
+        <span class="layout-btn-label">Minimal</span>
+      </div>
+    </div>
+
     <p class="section-title" style="margin-top:16px">Épaisseur du tracé</p>
     <div class="width-picker" id="widthPicker">
       <div class="width-btn" data-width="4">
@@ -308,6 +352,7 @@ let currentStats    = {};
 let selectedStats   = ['dist', 'avgSpeed', 'dur'];
 let traceColor      = '#ff6b35';
 let lineWidth       = 8;
+let layout          = 'bottom';
 const renderCanvas  = document.getElementById('render-canvas');
 const previewCanvas = document.getElementById('preview-canvas');
 
@@ -485,6 +530,19 @@ function renderStory(points, stats, color) {
   const ctx = renderCanvas.getContext('2d');
   ctx.clearRect(0, 0, STORY_W, STORY_H);
 
+  // Layout areas
+  let routeY, routeH, panelY, panelH;
+  if (layout === 'top') {
+    panelY = 0;              panelH = STORY_H * 0.28;
+    routeY = panelH;         routeH = STORY_H - panelH;
+  } else if (layout === 'minimal') {
+    routeY = 0;              routeH = STORY_H;
+    panelY = STORY_H * 0.88; panelH = STORY_H * 0.12;
+  } else {
+    routeY = 0;              routeH = STORY_H * 0.72;
+    panelY = routeH;         panelH = STORY_H - routeH;
+  }
+
   // Bounding box
   let minLat = Infinity, maxLat = -Infinity;
   let minLon = Infinity, maxLon = -Infinity;
@@ -493,95 +551,101 @@ function renderStory(points, stats, color) {
     minLon = Math.min(minLon, p.lon); maxLon = Math.max(maxLon, p.lon);
   }
 
-  const routeAreaH = STORY_H * 0.72;
-  const pad  = Math.min(STORY_W, routeAreaH) * PADDING;
+  // For minimal, shrink effective route area to avoid overlap with stats strip
+  const effH  = layout === 'minimal' ? STORY_H * 0.84 : routeH;
+  const pad   = Math.min(STORY_W, effH) * PADDING;
   const drawW = STORY_W - pad * 2;
-  const drawH = routeAreaH - pad * 2;
+  const drawH = effH - pad * 2;
   const scale = Math.min(drawW / (maxLon - minLon || .001), drawH / (maxLat - minLat || .001));
-  const routeW = (maxLon - minLon) * scale;
-  const routeH = (maxLat - minLat) * scale;
-  const offX = (STORY_W - routeW) / 2;
-  const offY = pad + (drawH - routeH) / 2;
+  const offX  = (STORY_W - (maxLon - minLon) * scale) / 2;
+  const offY  = routeY + pad + (drawH - (maxLat - minLat) * scale) / 2;
 
-  const toC = (lat, lon) => ({
-    x: offX + (lon - minLon) * scale,
-    y: offY + (maxLat - lat) * scale,
-  });
+  const toC = (lat, lon) => ({ x: offX + (lon - minLon) * scale, y: offY + (maxLat - lat) * scale });
 
   // Route (3-pass glow)
   for (const pass of [{ w: lineWidth * 5, a: .08 }, { w: lineWidth * 2.5, a: .18 }, { w: lineWidth, a: 1 }]) {
     ctx.beginPath();
     const f = toC(points[0].lat, points[0].lon);
     ctx.moveTo(f.x, f.y);
-    for (let i = 1; i < points.length; i++) {
-      const p = toC(points[i].lat, points[i].lon);
-      ctx.lineTo(p.x, p.y);
-    }
+    for (let i = 1; i < points.length; i++) { const p = toC(points[i].lat, points[i].lon); ctx.lineTo(p.x, p.y); }
     ctx.strokeStyle = color; ctx.globalAlpha = pass.a;
-    ctx.lineWidth = pass.w; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    ctx.stroke();
+    ctx.lineWidth = pass.w; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke();
   }
   ctx.globalAlpha = 1;
 
   // Start dot
   const sp = toC(points[0].lat, points[0].lon);
-  ctx.beginPath(); ctx.arc(sp.x, sp.y, 14, 0, Math.PI*2);
-  ctx.fillStyle = color; ctx.globalAlpha = .25; ctx.fill(); ctx.globalAlpha = 1;
-  ctx.beginPath(); ctx.arc(sp.x, sp.y, 7, 0, Math.PI*2);
-  ctx.fillStyle = color; ctx.fill();
+  ctx.beginPath(); ctx.arc(sp.x, sp.y, 14, 0, Math.PI*2); ctx.fillStyle = color; ctx.globalAlpha = .25; ctx.fill(); ctx.globalAlpha = 1;
+  ctx.beginPath(); ctx.arc(sp.x, sp.y, 7, 0, Math.PI*2); ctx.fillStyle = color; ctx.fill();
 
-  // Panel background
-  const panelY = routeAreaH;
-  const panelH = STORY_H - panelY;
-  const grad = ctx.createLinearGradient(0, panelY - 80, 0, STORY_H);
-  grad.addColorStop(0, 'rgba(0,0,0,0)');
-  grad.addColorStop(.35, 'rgba(0,0,0,.65)');
-  grad.addColorStop(1, 'rgba(0,0,0,.82)');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, panelY - 80, STORY_W, panelH + 80);
-
-  // Stats columns
-  const count = selectedStats.length;
-  const colW  = STORY_W / count;
-
-  // Vertical dividers
-  ctx.strokeStyle = 'rgba(255,255,255,.12)';
-  ctx.lineWidth = 1.5;
-  for (let i = 1; i < count; i++) {
-    ctx.beginPath();
-    ctx.moveTo(colW * i, panelY + panelH * .18);
-    ctx.lineTo(colW * i, panelY + panelH * .82);
-    ctx.stroke();
+  // Panel gradient
+  let grad;
+  if (layout === 'top') {
+    grad = ctx.createLinearGradient(0, 0, 0, panelH + 80);
+    grad.addColorStop(0, 'rgba(0,0,0,.82)');
+    grad.addColorStop(.65, 'rgba(0,0,0,.65)');
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, STORY_W, panelH + 80);
+  } else {
+    const fade = layout === 'minimal' ? 50 : 80;
+    grad = ctx.createLinearGradient(0, panelY - fade, 0, STORY_H);
+    grad.addColorStop(0, 'rgba(0,0,0,0)');
+    grad.addColorStop(layout === 'minimal' ? .5 : .35, 'rgba(0,0,0,.65)');
+    grad.addColorStop(1, 'rgba(0,0,0,.82)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, panelY - fade, STORY_W, panelH + fade);
   }
 
-  // Each stat
+  // Stats
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  for (let i = 0; i < count; i++) {
-    const def  = STAT_DEFS.find(d => d.id === selectedStats[i]);
-    const disp = getStatDisplay(def.id, stats);
-    const x    = colW * i + colW / 2;
 
-    // Value
-    ctx.font = `700 ${Math.floor(STORY_W * .085)}px -apple-system, SF Pro Display, sans-serif`;
+  if (layout === 'minimal') {
+    // Single compact line: "180km · 2h45 · 65 km/h"
+    const line = selectedStats.map(id => {
+      const def  = STAT_DEFS.find(d => d.id === id);
+      const disp = getStatDisplay(id, stats);
+      return disp.unit ? `${disp.value} ${disp.unit}` : String(disp.value);
+    }).join('   ·   ');
+    ctx.font = `600 ${Math.floor(STORY_W * .05)}px -apple-system, SF Pro Display, sans-serif`;
     ctx.fillStyle = 'white';
-    ctx.fillText(String(disp.value), x, panelY + panelH * .32);
+    ctx.fillText(line, STORY_W / 2, panelY + panelH / 2);
+  } else {
+    // Full column layout
+    const count = selectedStats.length;
+    const colW  = STORY_W / count;
 
-    // Unit (in trace color)
-    if (disp.unit) {
-      ctx.font = `500 ${Math.floor(STORY_W * .038)}px -apple-system, SF Pro Display, sans-serif`;
-      ctx.fillStyle = color;
-      ctx.fillText(disp.unit, x, panelY + panelH * .52);
+    ctx.strokeStyle = 'rgba(255,255,255,.12)'; ctx.lineWidth = 1.5;
+    for (let i = 1; i < count; i++) {
+      ctx.beginPath();
+      ctx.moveTo(colW * i, panelY + panelH * .18);
+      ctx.lineTo(colW * i, panelY + panelH * .82);
+      ctx.stroke();
     }
 
-    // Label
-    ctx.font = `400 ${Math.floor(STORY_W * .032)}px -apple-system, SF Pro Display, sans-serif`;
-    ctx.fillStyle = 'rgba(255,255,255,.4)';
-    ctx.fillText(def.label.toUpperCase(), x, panelY + panelH * .70);
-  }
+    for (let i = 0; i < count; i++) {
+      const def  = STAT_DEFS.find(d => d.id === selectedStats[i]);
+      const disp = getStatDisplay(def.id, stats);
+      const x    = colW * i + colW / 2;
 
-  // Accent dot
-  ctx.beginPath(); ctx.arc(STORY_W / 2, panelY + panelH * .88, 4, 0, Math.PI*2);
-  ctx.fillStyle = color; ctx.fill();
+      ctx.font = `700 ${Math.floor(STORY_W * .085)}px -apple-system, SF Pro Display, sans-serif`;
+      ctx.fillStyle = 'white';
+      ctx.fillText(String(disp.value), x, panelY + panelH * .32);
+
+      if (disp.unit) {
+        ctx.font = `500 ${Math.floor(STORY_W * .038)}px -apple-system, SF Pro Display, sans-serif`;
+        ctx.fillStyle = color;
+        ctx.fillText(disp.unit, x, panelY + panelH * .52);
+      }
+
+      ctx.font = `400 ${Math.floor(STORY_W * .032)}px -apple-system, SF Pro Display, sans-serif`;
+      ctx.fillStyle = 'rgba(255,255,255,.4)';
+      ctx.fillText(def.label.toUpperCase(), x, panelY + panelH * .70);
+    }
+
+    const dotY = layout === 'top' ? panelY + panelH * .12 : panelY + panelH * .88;
+    ctx.beginPath(); ctx.arc(STORY_W / 2, dotY, 4, 0, Math.PI*2); ctx.fillStyle = color; ctx.fill();
+  }
 }
 
 function updatePreview() {
@@ -643,6 +707,15 @@ document.getElementById('colorPicker').addEventListener('click', e => {
   document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
   sw.classList.add('active');
   traceColor = sw.dataset.color;
+  if (currentPoints.length) updatePreview();
+});
+
+document.getElementById('layoutPicker').addEventListener('click', e => {
+  const btn = e.target.closest('.layout-btn');
+  if (!btn) return;
+  document.querySelectorAll('.layout-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  layout = btn.dataset.layout;
   if (currentPoints.length) updatePreview();
 });
 
