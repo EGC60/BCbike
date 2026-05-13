@@ -162,6 +162,21 @@
   .color-swatch:hover { transform: scale(1.1); }
   .color-swatch.active { border-color: white; }
 
+  /* ── Format picker ── */
+  .format-picker { display: flex; gap: 8px; }
+  .format-btn {
+    flex: 1; padding: 10px 8px;
+    background: var(--surface); border: 2px solid transparent;
+    border-radius: 10px; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    transition: border-color .15s, background .15s;
+  }
+  .format-btn.active { border-color: var(--orange); background: rgba(255,107,53,.08); }
+  .format-icon {
+    border: 1.5px solid #555; border-radius: 2px; background: #1a1a1e;
+  }
+  .format-btn-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .4px; }
+
   /* ── Layout picker ── */
   .layout-picker { display: flex; gap: 8px; }
   .layout-btn {
@@ -250,6 +265,21 @@
   </div>
 
   <!-- Preview -->
+  <!-- Format picker -->
+  <div id="formatSection" style="display:none">
+    <p class="section-title">Format</p>
+    <div class="format-picker" id="formatPicker">
+      <div class="format-btn active" data-format="story">
+        <div class="format-icon" style="width:16px;height:28px"></div>
+        <span class="format-btn-label">Story 9:16</span>
+      </div>
+      <div class="format-btn" data-format="post">
+        <div class="format-icon" style="width:24px;height:24px"></div>
+        <span class="format-btn-label">Post 1:1</span>
+      </div>
+    </div>
+  </div>
+
   <div class="preview-wrapper" id="previewWrapper">
     <div class="preview-placeholder" id="previewPlaceholder">
       <div class="icon">🗺️</div>
@@ -353,6 +383,7 @@ let selectedStats   = ['dist', 'avgSpeed', 'dur'];
 let traceColor      = '#ff6b35';
 let lineWidth       = 8;
 let layout          = 'bottom';
+let format          = 'story';
 const renderCanvas  = document.getElementById('render-canvas');
 const previewCanvas = document.getElementById('preview-canvas');
 
@@ -525,22 +556,23 @@ function updateStatCountLabel() {
 
 // ── Canvas rendering ───────────────────────────────────────
 function renderStory(points, stats, color) {
+  const H = format === 'post' ? STORY_W : STORY_H;
   renderCanvas.width  = STORY_W;
-  renderCanvas.height = STORY_H;
+  renderCanvas.height = H;
   const ctx = renderCanvas.getContext('2d');
-  ctx.clearRect(0, 0, STORY_W, STORY_H);
+  ctx.clearRect(0, 0, STORY_W, H);
 
   // Layout areas
   let routeY, routeH, panelY, panelH;
   if (layout === 'top') {
-    panelY = 0;              panelH = STORY_H * 0.28;
-    routeY = panelH;         routeH = STORY_H - panelH;
+    panelY = 0;          panelH = H * 0.28;
+    routeY = panelH;     routeH = H - panelH;
   } else if (layout === 'minimal') {
-    routeY = 0;              routeH = STORY_H;
-    panelY = STORY_H * 0.88; panelH = STORY_H * 0.12;
+    routeY = 0;          routeH = H;
+    panelY = H * 0.88;   panelH = H * 0.12;
   } else {
-    routeY = 0;              routeH = STORY_H * 0.72;
-    panelY = routeH;         panelH = STORY_H - routeH;
+    routeY = 0;          routeH = H * 0.72;
+    panelY = routeH;     panelH = H - routeH;
   }
 
   // Bounding box
@@ -552,7 +584,7 @@ function renderStory(points, stats, color) {
   }
 
   // For minimal, shrink effective route area to avoid overlap with stats strip
-  const effH  = layout === 'minimal' ? STORY_H * 0.84 : routeH;
+  const effH  = layout === 'minimal' ? H * 0.84 : routeH;
   const pad   = Math.min(STORY_W, effH) * PADDING;
   const drawW = STORY_W - pad * 2;
   const drawH = effH - pad * 2;
@@ -589,12 +621,12 @@ function renderStory(points, stats, color) {
     ctx.fillRect(0, 0, STORY_W, panelH + 80);
   } else {
     const fade = layout === 'minimal' ? 50 : 80;
-    grad = ctx.createLinearGradient(0, panelY - fade, 0, STORY_H);
+    grad = ctx.createLinearGradient(0, panelY - fade, 0, H);
     grad.addColorStop(0, 'rgba(0,0,0,0)');
     grad.addColorStop(layout === 'minimal' ? .5 : .35, 'rgba(0,0,0,.65)');
     grad.addColorStop(1, 'rgba(0,0,0,.82)');
     ctx.fillStyle = grad;
-    ctx.fillRect(0, panelY - fade, STORY_W, panelH + fade);
+    ctx.fillRect(0, panelY - fade, STORY_W, panelH + fade + 1);
   }
 
   // Stats
@@ -649,11 +681,13 @@ function renderStory(points, stats, color) {
 }
 
 function updatePreview() {
+  const H = format === 'post' ? STORY_W : STORY_H;
   renderStory(currentPoints, currentStats, traceColor);
   const wrapper = document.getElementById('previewWrapper');
-  const scale = Math.min(wrapper.clientWidth / STORY_W, wrapper.clientHeight / STORY_H);
+  wrapper.style.aspectRatio = format === 'post' ? '1/1' : '9/16';
+  const scale = Math.min(wrapper.clientWidth / STORY_W, wrapper.clientHeight / H);
   previewCanvas.width  = STORY_W * scale;
-  previewCanvas.height = STORY_H * scale;
+  previewCanvas.height = H * scale;
   const ctx = previewCanvas.getContext('2d');
   ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
   ctx.drawImage(renderCanvas, 0, 0, previewCanvas.width, previewCanvas.height);
@@ -678,6 +712,7 @@ function handleFile(file) {
       buildStatPicker(stats);
 
       document.getElementById('statPickerSection').style.display = 'block';
+      document.getElementById('formatSection').style.display     = 'block';
       document.getElementById('customizeSection').style.display  = 'block';
       document.getElementById('actionButtons').style.display     = 'flex';
       document.getElementById('previewPlaceholder').style.display = 'none';
@@ -728,6 +763,15 @@ document.getElementById('widthPicker').addEventListener('click', e => {
   if (currentPoints.length) updatePreview();
 });
 
+document.getElementById('formatPicker').addEventListener('click', e => {
+  const btn = e.target.closest('.format-btn');
+  if (!btn) return;
+  document.querySelectorAll('.format-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  format = btn.dataset.format;
+  if (currentPoints.length) updatePreview();
+});
+
 // ── Share ──────────────────────────────────────────────────
 document.getElementById('shareBtn').addEventListener('click', async () => {
   if (!currentPoints.length) return;
@@ -750,9 +794,12 @@ document.getElementById('shareBtn').addEventListener('click', async () => {
 document.getElementById('resetBtn').addEventListener('click', () => {
   currentPoints = []; currentStats = {};
   fileInput.value = '';
-  ['statPickerSection','customizeSection','actionButtons'].forEach(id =>
+  ['statPickerSection','formatSection','customizeSection','actionButtons'].forEach(id =>
     document.getElementById(id).style.display = 'none'
   );
+  document.getElementById('previewWrapper').style.aspectRatio = '9/16';
+  format = 'story';
+  document.querySelectorAll('.format-btn').forEach(b => b.classList.toggle('active', b.dataset.format === 'story'));
   document.getElementById('previewPlaceholder').style.display = 'block';
   previewCanvas.style.display = 'none';
   hideError();
