@@ -164,6 +164,27 @@
   .text-input:focus { border-color: var(--orange); }
   .text-input::placeholder { color: var(--text-dim); }
 
+  /* ── Color mode toggle ── */
+  .color-mode-row { display: flex; gap: 8px; margin-bottom: 12px; }
+  .color-mode-btn {
+    flex: 1; padding: 8px 6px; font-size: 12px; font-weight: 600;
+    background: var(--surface); border: 2px solid transparent;
+    border-radius: 10px; cursor: pointer; color: var(--text-dim);
+    transition: border-color .15s, background .15s, color .15s;
+    font-family: inherit; text-transform: uppercase; letter-spacing: .4px;
+  }
+  .color-mode-btn.active { border-color: var(--orange); background: rgba(255,107,53,.08); color: var(--text); }
+  .color-swatches-row { display: flex; gap: 10px; flex-wrap: wrap; transition: opacity .2s; }
+  .color-swatches-row.disabled { opacity: .3; pointer-events: none; }
+  .speed-legend {
+    display: none; height: 10px; border-radius: 99px; margin-top: 10px;
+    background: linear-gradient(to right, hsl(220,100%,55%), hsl(120,100%,55%), hsl(60,100%,55%), hsl(0,100%,55%));
+  }
+  .speed-legend.visible { display: block; }
+  .speed-legend-labels { display: none; justify-content: space-between; margin-top: 4px; }
+  .speed-legend-labels.visible { display: flex; }
+  .speed-legend-labels span { font-size: 10px; color: var(--text-dim); }
+
   /* ── Color picker ── */
   .color-picker { display: flex; gap: 10px; flex-wrap: wrap; }
   .color-swatch {
@@ -320,13 +341,21 @@
   <!-- Color + width picker -->
   <div id="customizeSection" style="display:none">
     <p class="section-title">Couleur du tracé</p>
-    <div class="color-picker" id="colorPicker">
+    <div class="color-mode-row">
+      <button class="color-mode-btn active" data-mode="solid">Couleur unie</button>
+      <button class="color-mode-btn" data-mode="speed">Par vitesse</button>
+    </div>
+    <div class="color-swatches-row" id="colorPicker">
       <div class="color-swatch active" style="background:#ff6b35" data-color="#ff6b35"></div>
       <div class="color-swatch" style="background:#00d4ff" data-color="#00d4ff"></div>
       <div class="color-swatch" style="background:#a855f7" data-color="#a855f7"></div>
       <div class="color-swatch" style="background:#22c55e" data-color="#22c55e"></div>
       <div class="color-swatch" style="background:#f59e0b" data-color="#f59e0b"></div>
       <div class="color-swatch" style="background:#ec4899" data-color="#ec4899"></div>
+    </div>
+    <div class="speed-legend" id="speedLegend"></div>
+    <div class="speed-legend-labels" id="speedLegendLabels">
+      <span>Lent</span><span>Rapide</span>
     </div>
 
     <p class="section-title" style="margin-top:16px">Position des stats</p>
@@ -414,6 +443,7 @@ let lineWidth       = 8;
 let layout          = 'bottom';
 let format          = 'story';
 let customText      = '';
+let speedColor      = false;
 const renderCanvas  = document.getElementById('render-canvas');
 const previewCanvas = document.getElementById('preview-canvas');
 
@@ -624,14 +654,53 @@ function renderStory(points, stats, color) {
 
   const toC = (lat, lon) => ({ x: offX + (lon - minLon) * scale, y: offY + (maxLat - lat) * scale });
 
+  // Precompute per-segment speeds for speed coloring
+  let segSpeeds = [], speedMax = 1;
+  if (speedColor) {
+    for (let i = 1; i < points.length; i++) {
+      let spd = 0;
+      if (points[i].time && points[i-1].time) {
+        const dtH = (points[i].time - points[i-1].time) / 3600000;
+        if (dtH > 0) spd = Math.min(haversine(points[i-1].lat, points[i-1].lon, points[i].lat, points[i].lon) / dtH, 280);
+      }
+      segSpeeds.push(spd);
+    }
+    const sorted = [...segSpeeds].sort((a, b) => a - b);
+    speedMax = sorted[Math.floor(sorted.length * 0.95)] || 1;
+  }
+  const spdToColor = spd => {
+    const hue = Math.round(220 - Math.min(spd / speedMax, 1) * 220);
+    return `hsl(${hue},100%,55%)`;
+  };
+
   // Route (3-pass glow)
-  for (const pass of [{ w: lineWidth * 5, a: .08 }, { w: lineWidth * 2.5, a: .18 }, { w: lineWidth, a: 1 }]) {
-    ctx.beginPath();
-    const f = toC(points[0].lat, points[0].lon);
-    ctx.moveTo(f.x, f.y);
-    for (let i = 1; i < points.length; i++) { const p = toC(points[i].lat, points[i].lon); ctx.lineTo(p.x, p.y); }
-    ctx.strokeStyle = color; ctx.globalAlpha = pass.a;
-    ctx.lineWidth = pass.w; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke();
+  if (speedColor && segSpeeds.length) {
+    // Glow passes: full path in white
+    for (const pass of [{ w: lineWidth * 5, a: .07 }, { w: lineWidth * 2.5, a: .15 }]) {
+      ctx.beginPath();
+      const f = toC(points[0].lat, points[0].lon);
+      ctx.moveTo(f.x, f.y);
+      for (let i = 1; i < points.length; i++) { const p = toC(points[i].lat, points[i].lon); ctx.lineTo(p.x, p.y); }
+      ctx.strokeStyle = 'white'; ctx.globalAlpha = pass.a;
+      ctx.lineWidth = pass.w; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke();
+    }
+    // Sharp pass: per-segment speed color
+    ctx.globalAlpha = 1; ctx.lineWidth = lineWidth; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    for (let i = 1; i < points.length; i++) {
+      const a = toC(points[i-1].lat, points[i-1].lon);
+      const b = toC(points[i].lat, points[i].lon);
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+      ctx.strokeStyle = spdToColor(segSpeeds[i - 1]); ctx.stroke();
+    }
+  } else {
+    for (const pass of [{ w: lineWidth * 5, a: .08 }, { w: lineWidth * 2.5, a: .18 }, { w: lineWidth, a: 1 }]) {
+      ctx.beginPath();
+      const f = toC(points[0].lat, points[0].lon);
+      ctx.moveTo(f.x, f.y);
+      for (let i = 1; i < points.length; i++) { const p = toC(points[i].lat, points[i].lon); ctx.lineTo(p.x, p.y); }
+      ctx.strokeStyle = color; ctx.globalAlpha = pass.a;
+      ctx.lineWidth = pass.w; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke();
+    }
   }
   ctx.globalAlpha = 1;
 
@@ -787,6 +856,19 @@ uploadZone.addEventListener('drop', e => {
   handleFile(e.dataTransfer.files[0]);
 });
 
+// ── Color mode toggle ──────────────────────────────────────
+document.querySelector('.color-mode-row').addEventListener('click', e => {
+  const btn = e.target.closest('.color-mode-btn');
+  if (!btn) return;
+  document.querySelectorAll('.color-mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  speedColor = btn.dataset.mode === 'speed';
+  document.getElementById('colorPicker').classList.toggle('disabled', speedColor);
+  document.getElementById('speedLegend').classList.toggle('visible', speedColor);
+  document.getElementById('speedLegendLabels').classList.toggle('visible', speedColor);
+  if (currentPoints.length) updatePreview();
+});
+
 // ── Color picker ───────────────────────────────────────────
 document.getElementById('colorPicker').addEventListener('click', e => {
   const sw = e.target.closest('.color-swatch');
@@ -856,6 +938,11 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   );
   customText = '';
   document.getElementById('customTextInput').value = '';
+  speedColor = false;
+  document.querySelectorAll('.color-mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === 'solid'));
+  document.getElementById('colorPicker').classList.remove('disabled');
+  document.getElementById('speedLegend').classList.remove('visible');
+  document.getElementById('speedLegendLabels').classList.remove('visible');
   document.getElementById('previewWrapper').style.aspectRatio = '9/16';
   format = 'story';
   document.querySelectorAll('.format-btn').forEach(b => b.classList.toggle('active', b.dataset.format === 'story'));
