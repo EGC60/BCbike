@@ -217,12 +217,6 @@
   .color-swatch.active { border-color: white; }
 
   /* ── Buttons ── */
-  .actions {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
   button {
     width: 100%;
     padding: 16px;
@@ -292,6 +286,12 @@
     color: #ff6b6b;
     display: none;
   }
+
+  .actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
 </style>
 </head>
 <body>
@@ -312,7 +312,6 @@
 
   <div class="error-msg" id="errorMsg"></div>
 
-  <!-- Stats (hidden until GPX loaded) -->
   <div class="stats-grid" id="statsGrid" style="display:none">
     <div class="stat-card">
       <div class="stat-value" id="statDist">—</div>
@@ -328,7 +327,6 @@
     </div>
   </div>
 
-  <!-- Preview -->
   <div class="preview-wrapper" id="previewWrapper">
     <div class="preview-placeholder" id="previewPlaceholder">
       <div class="icon">🗺️</div>
@@ -337,7 +335,6 @@
     <canvas id="preview-canvas"></canvas>
   </div>
 
-  <!-- Color picker -->
   <div id="customizeSection" style="display:none">
     <p class="section-title">Couleur du tracé</p>
     <div class="color-picker" id="colorPicker">
@@ -350,7 +347,6 @@
     </div>
   </div>
 
-  <!-- Actions -->
   <div class="actions" id="actionButtons" style="display:none">
     <button class="btn-primary" id="shareBtn">
       <span>↑</span> Partager la story
@@ -363,32 +359,25 @@
 </div>
 
 <div class="toast" id="toast"></div>
-
-<!-- Hidden render canvas (full resolution) -->
 <canvas id="render-canvas" style="display:none"></canvas>
 
 <script>
-// ── Constants ──────────────────────────────────────────────
 const STORY_W = 1080;
 const STORY_H = 1920;
-const PADDING = 0.12; // fraction of canvas to pad around the route
+const PADDING = 0.12;
 
-// ── State ──────────────────────────────────────────────────
 let currentPoints = [];
 let currentStats  = {};
 let traceColor    = '#ff6b35';
 let renderCanvas  = document.getElementById('render-canvas');
 let previewCanvas = document.getElementById('preview-canvas');
 
-// ── GPX Parsing ────────────────────────────────────────────
 function parseGPX(text) {
   const xml = new DOMParser().parseFromString(text, 'text/xml');
   const parseErr = xml.querySelector('parsererror');
   if (parseErr) throw new Error('Fichier GPX invalide ou corrompu.');
-
   const trkpts = [...xml.querySelectorAll('trkpt')];
   if (trkpts.length < 2) throw new Error('Le fichier GPX doit contenir au moins 2 points de tracé.');
-
   return trkpts.map(pt => ({
     lat:  parseFloat(pt.getAttribute('lat')),
     lon:  parseFloat(pt.getAttribute('lon')),
@@ -396,7 +385,6 @@ function parseGPX(text) {
   }));
 }
 
-// ── Haversine distance (km) ────────────────────────────────
 function haversine(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const φ1 = lat1 * Math.PI / 180, φ2 = lat2 * Math.PI / 180;
@@ -406,27 +394,21 @@ function haversine(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.asin(Math.sqrt(a));
 }
 
-// ── Stats calculation ──────────────────────────────────────
-// Moving time: sum only segments where speed > 3 km/h (filters stops & pauses)
 function calcStats(points) {
   let totalDist = 0;
   let movingMs  = 0;
-
   for (let i = 1; i < points.length; i++) {
     const d = haversine(points[i-1].lat, points[i-1].lon, points[i].lat, points[i].lon);
     totalDist += d;
-
     if (points[i].time && points[i-1].time) {
       const dtMs = points[i].time - points[i-1].time;
       const dtH  = dtMs / 3600000;
       const segSpeedKmh = dtH > 0 ? d / dtH : 0;
-      if (segSpeedKmh > 3) movingMs += dtMs; // only count moving segments
+      if (segSpeedKmh > 3) movingMs += dtMs;
     }
   }
-
-  const movingH   = movingMs / 3600000;
-  const avgSpeed  = movingH > 0.01 ? totalDist / movingH : null;
-
+  const movingH  = movingMs / 3600000;
+  const avgSpeed = movingH > 0.01 ? totalDist / movingH : null;
   return {
     distKm:   Math.round(totalDist * 10) / 10,
     movingMs,
@@ -443,16 +425,13 @@ function formatDuration(ms) {
   return `${h}h${String(min).padStart(2, '0')}`;
 }
 
-// ── Canvas rendering ───────────────────────────────────────
 function renderStory(points, stats, color) {
   const canvas = renderCanvas;
   canvas.width  = STORY_W;
   canvas.height = STORY_H;
   const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, STORY_W, STORY_H);
 
-  ctx.clearRect(0, 0, STORY_W, STORY_H); // transparent background
-
-  // Bounding box
   let minLat = Infinity, maxLat = -Infinity;
   let minLon = Infinity, maxLon = -Infinity;
   for (const p of points) {
@@ -460,31 +439,23 @@ function renderStory(points, stats, color) {
     minLon = Math.min(minLon, p.lon); maxLon = Math.max(maxLon, p.lon);
   }
 
-  // Route area: top 72% of canvas (leave room for stats panel at bottom)
   const routeAreaH = STORY_H * 0.72;
   const pad        = Math.min(STORY_W, routeAreaH) * PADDING;
   const drawW      = STORY_W - pad * 2;
   const drawH      = routeAreaH - pad * 2;
-
-  // Scale to fit, preserving aspect ratio
-  const latSpan = maxLat - minLat || 0.001;
-  const lonSpan = maxLon - minLon || 0.001;
-  const scaleX  = drawW / lonSpan;
-  const scaleY  = drawH / latSpan;
-  const scale   = Math.min(scaleX, scaleY);
-
-  // Center the route in the available area
-  const routeW = lonSpan * scale;
-  const routeH = latSpan * scale;
-  const offsetX = (STORY_W - routeW) / 2;
-  const offsetY = pad + (drawH - routeH) / 2;
+  const latSpan    = maxLat - minLat || 0.001;
+  const lonSpan    = maxLon - minLon || 0.001;
+  const scale      = Math.min(drawW / lonSpan, drawH / latSpan);
+  const routeW     = lonSpan * scale;
+  const routeH     = latSpan * scale;
+  const offsetX    = (STORY_W - routeW) / 2;
+  const offsetY    = pad + (drawH - routeH) / 2;
 
   const toCanvas = (lat, lon) => ({
     x: offsetX + (lon - minLon) * scale,
-    y: offsetY + (maxLat - lat) * scale,  // flip Y
+    y: offsetY + (maxLat - lat) * scale,
   });
 
-  // ── Draw route (3-pass glow effect) ────────────────────
   const passes = [
     { width: 24, alpha: 0.08 },
     { width: 12, alpha: 0.18 },
@@ -508,26 +479,20 @@ function renderStory(points, stats, color) {
   }
   ctx.globalAlpha = 1;
 
-  // ── Start dot ──────────────────────────────────────────
   const startPt = toCanvas(points[0].lat, points[0].lon);
-  // outer ring
   ctx.beginPath();
   ctx.arc(startPt.x, startPt.y, 14, 0, Math.PI * 2);
   ctx.fillStyle = color;
   ctx.globalAlpha = 0.25;
   ctx.fill();
   ctx.globalAlpha = 1;
-  // inner dot
   ctx.beginPath();
   ctx.arc(startPt.x, startPt.y, 7, 0, Math.PI * 2);
   ctx.fillStyle = color;
   ctx.fill();
 
-  // ── Stats panel (bottom ~28% of canvas) ────────────────
   const panelY = routeAreaH;
   const panelH = STORY_H - panelY;
-
-  // Gradient: transparent → opaque dark
   const grad = ctx.createLinearGradient(0, panelY - 80, 0, STORY_H);
   grad.addColorStop(0, 'rgba(0,0,0,0)');
   grad.addColorStop(0.35, 'rgba(0,0,0,0.65)');
@@ -535,7 +500,6 @@ function renderStory(points, stats, color) {
   ctx.fillStyle = grad;
   ctx.fillRect(0, panelY - 80, STORY_W, panelH + 80);
 
-  // Distance (large)
   const distText = stats.distKm ? `${stats.distKm} km` : '— km';
   ctx.fillStyle = 'white';
   ctx.font = `800 ${STORY_W * 0.17}px -apple-system, SF Pro Display, sans-serif`;
@@ -543,7 +507,6 @@ function renderStory(points, stats, color) {
   ctx.textBaseline = 'middle';
   ctx.fillText(distText, STORY_W / 2, panelY + panelH * 0.28);
 
-  // Divider line
   const divW = STORY_W * 0.4;
   ctx.beginPath();
   ctx.moveTo(STORY_W / 2 - divW / 2, panelY + panelH * 0.48);
@@ -553,23 +516,19 @@ function renderStory(points, stats, color) {
   ctx.globalAlpha = 1;
   ctx.stroke();
 
-  // Duration + Speed (side by side)
   const durText   = formatDuration(stats.movingMs);
   const speedText = stats.avgSpeed ? `${stats.avgSpeed} km/h` : '—';
-
   ctx.font = `600 ${STORY_W * 0.058}px -apple-system, SF Pro Display, sans-serif`;
   ctx.fillStyle = 'rgba(255,255,255,0.85)';
   ctx.textAlign = 'center';
   ctx.fillText(durText,   STORY_W * 0.3,  panelY + panelH * 0.63);
   ctx.fillText(speedText, STORY_W * 0.7,  panelY + panelH * 0.63);
 
-  // Sub-labels
   ctx.font = `400 ${STORY_W * 0.034}px -apple-system, SF Pro Display, sans-serif`;
   ctx.fillStyle = 'rgba(255,255,255,0.45)';
-  ctx.fillText('DURÉE',    STORY_W * 0.3,  panelY + panelH * 0.76);
-  ctx.fillText('MOYENNE',  STORY_W * 0.7,  panelY + panelH * 0.76);
+  ctx.fillText('DURÉE',   STORY_W * 0.3,  panelY + panelH * 0.76);
+  ctx.fillText('MOYENNE', STORY_W * 0.7,  panelY + panelH * 0.76);
 
-  // Accent color dot next to sub-labels
   ctx.beginPath();
   ctx.arc(STORY_W / 2, panelY + panelH * 0.91, 4, 0, Math.PI * 2);
   ctx.fillStyle = color;
@@ -578,13 +537,10 @@ function renderStory(points, stats, color) {
 
 function updatePreview() {
   renderStory(currentPoints, currentStats, traceColor);
-
-  // Downscale to preview canvas
   const wrapper = document.getElementById('previewWrapper');
   const maxW = wrapper.clientWidth;
   const maxH = wrapper.clientHeight;
   const scale = Math.min(maxW / STORY_W, maxH / STORY_H);
-
   previewCanvas.width  = STORY_W * scale;
   previewCanvas.height = STORY_H * scale;
   const ctx = previewCanvas.getContext('2d');
@@ -593,33 +549,26 @@ function updatePreview() {
   previewCanvas.style.display = 'block';
 }
 
-// ── File handling ──────────────────────────────────────────
 function handleFile(file) {
   if (!file || !file.name.toLowerCase().endsWith('.gpx')) {
     showError('Merci de choisir un fichier .gpx');
     return;
   }
   hideError();
-
   const reader = new FileReader();
   reader.onload = e => {
     try {
       const points = parseGPX(e.target.result);
       const stats  = calcStats(points);
-
       currentPoints = points;
       currentStats  = stats;
-
-      // Update stats display
       document.getElementById('statDist').textContent  = stats.distKm ?? '—';
       document.getElementById('statDur').textContent   = formatDuration(stats.movingMs);
       document.getElementById('statSpeed').textContent = stats.avgSpeed ?? '—';
-
       document.getElementById('statsGrid').style.display        = 'grid';
       document.getElementById('customizeSection').style.display = 'block';
       document.getElementById('actionButtons').style.display    = 'flex';
       document.getElementById('previewPlaceholder').style.display = 'none';
-
       updatePreview();
     } catch (err) {
       showError(err.message);
@@ -628,7 +577,6 @@ function handleFile(file) {
   reader.readAsText(file);
 }
 
-// ── Upload zone events ─────────────────────────────────────
 const uploadZone = document.getElementById('uploadZone');
 const fileInput  = document.getElementById('fileInput');
 
@@ -645,7 +593,6 @@ uploadZone.addEventListener('drop', e => {
   handleFile(e.dataTransfer.files[0]);
 });
 
-// ── Color picker ───────────────────────────────────────────
 document.getElementById('colorPicker').addEventListener('click', e => {
   const swatch = e.target.closest('.color-swatch');
   if (!swatch) return;
@@ -655,26 +602,19 @@ document.getElementById('colorPicker').addEventListener('click', e => {
   if (currentPoints.length) updatePreview();
 });
 
-// ── Share ──────────────────────────────────────────────────
 document.getElementById('shareBtn').addEventListener('click', async () => {
   if (!currentPoints.length) return;
   renderStory(currentPoints, currentStats, traceColor);
-
   renderCanvas.toBlob(async blob => {
     const file = new File([blob], 'moto-story.png', { type: 'image/png' });
-
-    // Try Web Share API (works on iOS Safari 15+, Android Chrome)
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
         await navigator.share({ files: [file], title: 'Ma sortie moto' });
         return;
       } catch (err) {
-        if (err.name === 'AbortError') return; // user cancelled, that's fine
-        // fall through to download fallback
+        if (err.name === 'AbortError') return;
       }
     }
-
-    // Desktop fallback: trigger download
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href     = url;
@@ -685,7 +625,6 @@ document.getElementById('shareBtn').addEventListener('click', async () => {
   }, 'image/png');
 });
 
-// ── Reset ──────────────────────────────────────────────────
 document.getElementById('resetBtn').addEventListener('click', () => {
   currentPoints = [];
   currentStats  = {};
@@ -698,7 +637,6 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   hideError();
 });
 
-// ── Helpers ────────────────────────────────────────────────
 function showError(msg) {
   const el = document.getElementById('errorMsg');
   el.textContent = msg;
