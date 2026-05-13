@@ -106,10 +106,7 @@
     user-select: none;
   }
   .spc:active { transform: scale(.97); }
-  .spc.selected {
-    border-color: var(--orange);
-    background: rgba(255,107,53,.08);
-  }
+  .spc.selected { border-color: var(--orange); background: rgba(255,107,53,.08); }
   .spc.unavailable { opacity: .3; cursor: not-allowed; }
   .spc-icon  { font-size: 16px; margin-bottom: 3px; }
   .spc-val   { font-size: 15px; font-weight: 700; color: var(--text); line-height: 1.1; }
@@ -153,6 +150,18 @@
   }
   .color-swatch:hover { transform: scale(1.1); }
   .color-swatch.active { border-color: white; }
+
+  .width-picker { display: flex; gap: 8px; }
+  .width-btn {
+    flex: 1; padding: 10px 6px;
+    background: var(--surface); border: 2px solid transparent;
+    border-radius: 10px; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    transition: border-color .15s, background .15s;
+  }
+  .width-btn.active { border-color: var(--orange); background: rgba(255,107,53,.08); }
+  .width-btn-line { background: white; border-radius: 99px; width: 28px; }
+  .width-btn-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .4px; }
 
   .actions { display: flex; flex-direction: column; gap: 10px; }
   button {
@@ -224,6 +233,26 @@
       <div class="color-swatch" style="background:#f59e0b" data-color="#f59e0b"></div>
       <div class="color-swatch" style="background:#ec4899" data-color="#ec4899"></div>
     </div>
+
+    <p class="section-title" style="margin-top:16px">Épaisseur du tracé</p>
+    <div class="width-picker" id="widthPicker">
+      <div class="width-btn" data-width="4">
+        <div class="width-btn-line" style="height:2px"></div>
+        <span class="width-btn-label">Fin</span>
+      </div>
+      <div class="width-btn active" data-width="8">
+        <div class="width-btn-line" style="height:4px"></div>
+        <span class="width-btn-label">Normal</span>
+      </div>
+      <div class="width-btn" data-width="14">
+        <div class="width-btn-line" style="height:7px"></div>
+        <span class="width-btn-label">Épais</span>
+      </div>
+      <div class="width-btn" data-width="22">
+        <div class="width-btn-line" style="height:11px"></div>
+        <span class="width-btn-label">XL</span>
+      </div>
+    </div>
   </div>
 
   <div class="actions" id="actionButtons" style="display:none">
@@ -257,6 +286,7 @@ let currentPoints   = [];
 let currentStats    = {};
 let selectedStats   = ['dist', 'avgSpeed', 'dur'];
 let traceColor      = '#ff6b35';
+let lineWidth       = 8;
 const renderCanvas  = document.getElementById('render-canvas');
 const previewCanvas = document.getElementById('preview-canvas');
 
@@ -295,7 +325,6 @@ function haversine(lat1, lon1, lat2, lon2) {
 function calcStats(points) {
   let totalDist = 0, movingMs = 0, maxSpeedKmh = 0, elevGain = 0;
   const hrVals = [], cadVals = [], eleVals = [];
-
   for (let i = 1; i < points.length; i++) {
     const d = haversine(points[i-1].lat, points[i-1].lon, points[i].lat, points[i].lon);
     totalDist += d;
@@ -313,17 +342,14 @@ function calcStats(points) {
       if (diff > 2) elevGain += diff;
     }
   }
-
   for (const p of points) {
     if (p.ele !== null) eleVals.push(p.ele);
     if (p.hr  !== null) hrVals.push(p.hr);
     if (p.cad !== null && p.cad > 0) cadVals.push(p.cad);
   }
-
   const movingH  = movingMs / 3600000;
   const avgSpeed = movingH > 0.01 ? totalDist / movingH : null;
   const avg = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
-
   return {
     distKm:   Math.round(totalDist * 10) / 10,
     movingMs,
@@ -430,10 +456,9 @@ function renderStory(points, stats, color) {
   const scale = Math.min(drawW / (maxLon - minLon || .001), drawH / (maxLat - minLat || .001));
   const offX  = (STORY_W - (maxLon - minLon) * scale) / 2;
   const offY  = pad + (drawH - (maxLat - minLat) * scale) / 2;
-
   const toC = (lat, lon) => ({ x: offX + (lon - minLon) * scale, y: offY + (maxLat - lat) * scale });
 
-  for (const pass of [{ w: 24, a: .08 }, { w: 12, a: .18 }, { w: 4, a: 1 }]) {
+  for (const pass of [{ w: lineWidth * 5, a: .08 }, { w: lineWidth * 2.5, a: .18 }, { w: lineWidth, a: 1 }]) {
     ctx.beginPath();
     const f = toC(points[0].lat, points[0].lon);
     ctx.moveTo(f.x, f.y);
@@ -477,7 +502,6 @@ function renderStory(points, stats, color) {
     ctx.fillStyle = 'rgba(255,255,255,.4)';
     ctx.fillText(def.label.toUpperCase(), x, panelY + panelH * .70);
   }
-
   ctx.beginPath(); ctx.arc(STORY_W / 2, panelY + panelH * .88, 4, 0, Math.PI*2); ctx.fillStyle = color; ctx.fill();
 }
 
@@ -524,7 +548,17 @@ document.getElementById('colorPicker').addEventListener('click', e => {
   const sw = e.target.closest('.color-swatch');
   if (!sw) return;
   document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
-  sw.classList.add('active'); traceColor = sw.dataset.color;
+  sw.classList.add('active');
+  traceColor = sw.dataset.color;
+  if (currentPoints.length) updatePreview();
+});
+
+document.getElementById('widthPicker').addEventListener('click', e => {
+  const btn = e.target.closest('.width-btn');
+  if (!btn) return;
+  document.querySelectorAll('.width-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  lineWidth = parseInt(btn.dataset.width);
   if (currentPoints.length) updatePreview();
 });
 
