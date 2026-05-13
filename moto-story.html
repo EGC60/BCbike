@@ -152,6 +152,18 @@
     object-fit: contain; display: none; z-index: 2;
   }
 
+  /* ── Custom text input ── */
+  .text-input {
+    width: 100%; padding: 12px 14px;
+    background: var(--surface); border: 1.5px solid #333;
+    border-radius: 12px; color: var(--text);
+    font-size: 15px; font-family: inherit;
+    transition: border-color .15s;
+    outline: none;
+  }
+  .text-input:focus { border-color: var(--orange); }
+  .text-input::placeholder { color: var(--text-dim); }
+
   /* ── Color picker ── */
   .color-picker { display: flex; gap: 10px; flex-wrap: wrap; }
   .color-swatch {
@@ -271,6 +283,14 @@
       <span id="statCountLabel">0 / 3 sélectionnées</span>
     </p>
     <div class="stat-picker" id="statPicker"></div>
+  </div>
+
+  <!-- Custom text -->
+  <div id="customTextSection" style="display:none">
+    <p class="section-title">Nom de la sortie</p>
+    <input type="text" id="customTextInput" class="text-input"
+      placeholder="Ex : Gorges du Verdon · Juin 2024"
+      maxlength="60">
   </div>
 
   <!-- Preview -->
@@ -393,6 +413,7 @@ let traceColor      = '#ff6b35';
 let lineWidth       = 8;
 let layout          = 'bottom';
 let format          = 'story';
+let customText      = '';
 const renderCanvas  = document.getElementById('render-canvas');
 const previewCanvas = document.getElementById('preview-canvas');
 
@@ -638,6 +659,27 @@ function renderStory(points, stats, color) {
     ctx.fillRect(0, panelY - fade, STORY_W, panelH + fade + 1);
   }
 
+  // Custom ride name (top of image)
+  if (customText.trim()) {
+    const label = customText.trim().toUpperCase();
+    const fontSize = Math.floor(STORY_W * 0.034);
+    ctx.font = `600 ${fontSize}px -apple-system, SF Pro Display, sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const textY = layout === 'top' ? panelH + fontSize * 2 : fontSize * 2;
+    // Subtle background pill
+    const metrics = ctx.measureText(label);
+    const pw = metrics.width + fontSize * 1.4;
+    const ph = fontSize * 1.8;
+    const px = STORY_W / 2 - pw / 2;
+    const py = textY - ph / 2;
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+    ctx.beginPath();
+    ctx.roundRect(px, py, pw, ph, ph / 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.fillText(label, STORY_W / 2, textY);
+  }
+
   // Stats
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
 
@@ -720,10 +762,11 @@ function handleFile(file) {
       autoSelect(stats);
       buildStatPicker(stats);
 
-      document.getElementById('statPickerSection').style.display = 'block';
-      document.getElementById('formatSection').style.display     = 'block';
-      document.getElementById('customizeSection').style.display  = 'block';
-      document.getElementById('actionButtons').style.display     = 'flex';
+      document.getElementById('statPickerSection').style.display  = 'block';
+      document.getElementById('customTextSection').style.display  = 'block';
+      document.getElementById('formatSection').style.display      = 'block';
+      document.getElementById('customizeSection').style.display   = 'block';
+      document.getElementById('actionButtons').style.display      = 'flex';
       document.getElementById('previewPlaceholder').style.display = 'none';
 
       updatePreview();
@@ -781,6 +824,11 @@ document.getElementById('formatPicker').addEventListener('click', e => {
   if (currentPoints.length) updatePreview();
 });
 
+document.getElementById('customTextInput').addEventListener('input', e => {
+  customText = e.target.value;
+  if (currentPoints.length) updatePreview();
+});
+
 // ── Share ──────────────────────────────────────────────────
 document.getElementById('shareBtn').addEventListener('click', async () => {
   if (!currentPoints.length) return;
@@ -803,9 +851,11 @@ document.getElementById('shareBtn').addEventListener('click', async () => {
 document.getElementById('resetBtn').addEventListener('click', () => {
   currentPoints = []; currentStats = {};
   fileInput.value = '';
-  ['statPickerSection','formatSection','customizeSection','actionButtons'].forEach(id =>
+  ['statPickerSection','customTextSection','formatSection','customizeSection','actionButtons'].forEach(id =>
     document.getElementById(id).style.display = 'none'
   );
+  customText = '';
+  document.getElementById('customTextInput').value = '';
   document.getElementById('previewWrapper').style.aspectRatio = '9/16';
   format = 'story';
   document.querySelectorAll('.format-btn').forEach(b => b.classList.toggle('active', b.dataset.format === 'story'));
