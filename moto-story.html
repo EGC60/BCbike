@@ -210,6 +210,35 @@
   }
   .format-btn-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .4px; }
 
+  /* ── Video section ── */
+  .photo-upload-mini {
+    position: relative; border: 1.5px dashed #444; border-radius: 12px;
+    padding: 14px 16px; cursor: pointer; transition: border-color .2s, background .2s;
+    display: flex; align-items: center; gap: 12px; overflow: hidden;
+  }
+  .photo-upload-mini:hover { border-color: var(--orange); background: rgba(255,107,53,.04); }
+  .photo-upload-mini input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .photo-icon { font-size: 22px; flex-shrink: 0; }
+  .photo-label { font-size: 14px; line-height: 1.4; }
+  #photoThumb { width: 48px; height: 48px; object-fit: cover; border-radius: 8px; flex-shrink: 0; margin-left: auto; }
+  #photoClearBtn {
+    flex-shrink: 0; margin-left: 4px; background: #333; border: none;
+    border-radius: 50%; width: 24px; height: 24px; cursor: pointer;
+    color: var(--text-dim); font-size: 14px; display: none;
+    align-items: center; justify-content: center; padding: 0;
+  }
+  .dur-picker { display: flex; gap: 8px; }
+  .dur-btn {
+    flex: 1; padding: 10px 6px; text-align: center;
+    font-size: 14px; font-weight: 600; font-family: inherit;
+    background: var(--surface); border: 2px solid transparent;
+    border-radius: 10px; cursor: pointer; color: var(--text);
+    transition: border-color .15s, background .15s;
+  }
+  .dur-btn.active { border-color: var(--orange); background: rgba(255,107,53,.08); }
+  .btn-video { background: rgba(124,58,237,.12); color: #a78bfa; border: 1.5px solid rgba(124,58,237,.35); }
+  .btn-video:disabled { opacity: .35; }
+
   /* ── Layout picker ── */
   .layout-picker { display: flex; gap: 8px; }
   .layout-btn {
@@ -330,10 +359,28 @@
     </div>
   </div>
 
+  <!-- Video section -->
+  <div id="videoSection" style="display:none">
+    <p class="section-title">Story animée</p>
+    <div class="photo-upload-mini" id="photoUploadZone">
+      <input type="file" id="photoInput" accept="image/*">
+      <span class="photo-icon">🖼️</span>
+      <span class="photo-label" id="photoLabel">Photo de fond <span style="color:var(--text-dim);font-size:12px">(optionnel)</span></span>
+      <img id="photoThumb" style="display:none" alt="">
+      <button id="photoClearBtn" title="Supprimer">✕</button>
+    </div>
+    <p class="section-title" style="margin-top:14px">Durée de l'animation</p>
+    <div class="dur-picker" id="durPicker">
+      <button class="dur-btn" data-dur="3">3 s</button>
+      <button class="dur-btn active" data-dur="5">5 s</button>
+      <button class="dur-btn" data-dur="8">8 s</button>
+    </div>
+  </div>
+
   <div class="preview-wrapper" id="previewWrapper">
     <div class="preview-placeholder" id="previewPlaceholder">
       <div class="icon">🗺️</div>
-      <p>L'aperçu de ta story<br>apparaîstra ici</p>
+      <p>L'aperçu de ta story<br>apparaîtra ici</p>
     </div>
     <canvas id="preview-canvas"></canvas>
   </div>
@@ -407,6 +454,7 @@
   <!-- Actions -->
   <div class="actions" id="actionButtons" style="display:none">
     <button class="btn-primary" id="shareBtn">↑ Partager la story</button>
+    <button class="btn-video" id="videoBtn">▶ Générer la vidéo animée</button>
     <button class="btn-secondary" id="resetBtn">Nouvelle sortie</button>
   </div>
 
@@ -416,7 +464,7 @@
 <canvas id="render-canvas" style="display:none"></canvas>
 
 <script>
-// ── Stat definitions ──────────────────────────────────────────────────
+// ── Stat definitions ──────────────────────────────────────────────────────
 const STAT_DEFS = [
   { id: 'dist',     label: 'Distance',    unit: 'km',   icon: '📍' },
   { id: 'avgSpeed', label: 'Vitesse moy.', unit: 'km/h', icon: '⚡️' },
@@ -434,7 +482,8 @@ const STORY_W = 1080;
 const STORY_H = 1920;
 const PADDING = 0.12;
 
-// ── State ────────────────────────────────────────────────────────let currentPoints   = [];
+// ── State ────────────────────────────────────────────────────────
+let currentPoints   = [];
 let currentStats    = {};
 let selectedStats   = ['dist', 'avgSpeed', 'dur'];
 let traceColor      = '#ff6b35';
@@ -446,7 +495,8 @@ let speedColor      = false;
 const renderCanvas  = document.getElementById('render-canvas');
 const previewCanvas = document.getElementById('preview-canvas');
 
-// ── GPX Parsing ──────────────────────────────────────────────────function getExtVal(pt, name) {
+// ── GPX Parsing ─────────────────────────────────────────────────────
+function getExtVal(pt, name) {
   // Works regardless of namespace prefix by matching localName
   const all = pt.getElementsByTagName('*');
   for (const el of all) {
@@ -471,7 +521,8 @@ function parseGPX(text) {
   }));
 }
 
-// ── Haversine ──────────────────────────────────────────────────────function haversine(lat1, lon1, lat2, lon2) {
+// ── Haversine ──────────────────────────────────────────────────────
+function haversine(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const φ1 = lat1 * Math.PI / 180, φ2 = lat2 * Math.PI / 180;
   const Δφ = (lat2 - lat1) * Math.PI / 180;
@@ -480,7 +531,8 @@ function parseGPX(text) {
   return R * 2 * Math.asin(Math.sqrt(a));
 }
 
-// ── Stats ────────────────────────────────────────────────────────function calcStats(points) {
+// ── Stats ────────────────────────────────────────────────────────
+function calcStats(points) {
   let totalDist = 0, movingMs = 0, maxSpeedKmh = 0;
   let elevGain = 0;
   const hrVals = [], cadVals = [], eleVals = [];
@@ -562,13 +614,15 @@ function isAvailable(id, stats) {
   return v !== null && v !== undefined;
 }
 
-// ── Auto-select best stats ───────────────────────────────────────────────────function autoSelect(stats) {
+// ── Auto-select best stats ───────────────────────────────────────────────────
+function autoSelect(stats) {
   const priority = ['dist', 'avgSpeed', 'maxSpeed', 'elevGain', 'maxAlt', 'avgHr', 'maxHr', 'dur', 'avgCad'];
   selectedStats = priority.filter(id => isAvailable(id, stats)).slice(0, 3);
   if (selectedStats.length === 0) selectedStats = ['dist'];
 }
 
-// ── Stat picker UI ───────────────────────────────────────────────────────function buildStatPicker(stats) {
+// ── Stat picker UI ────────────────────────────────────────────────────────
+function buildStatPicker(stats) {
   const picker = document.getElementById('statPicker');
   picker.innerHTML = '';
 
@@ -609,12 +663,21 @@ function updateStatCountLabel() {
   document.getElementById('statCountLabel').textContent = `${selectedStats.length} / 3 sélectionnées`;
 }
 
-// ── Canvas rendering ───────────────────────────────────────────────────────function renderStory(points, stats, color) {
+// ── Canvas rendering ───────────────────────────────────────────────────────
+function renderStory(points, stats, color, opts = {}) {
+  const { phase = 1, statsAlpha = 1, bgPhoto = null } = opts;
   const H = format === 'post' ? STORY_W : STORY_H;
   renderCanvas.width  = STORY_W;
   renderCanvas.height = H;
   const ctx = renderCanvas.getContext('2d');
   ctx.clearRect(0, 0, STORY_W, H);
+
+  // Background photo (cover-fit)
+  if (bgPhoto) {
+    const s = Math.max(STORY_W / bgPhoto.width, H / bgPhoto.height);
+    const bw = bgPhoto.width * s, bh = bgPhoto.height * s;
+    ctx.drawImage(bgPhoto, (STORY_W - bw) / 2, (H - bh) / 2, bw, bh);
+  }
 
   // Layout areas
   let routeY, routeH, panelY, panelH;
@@ -648,6 +711,11 @@ function updateStatCountLabel() {
 
   const toC = (lat, lon) => ({ x: offX + (lon - minLon) * scale, y: offY + (maxLat - lat) * scale });
 
+  // Partial trace for animation
+  const drawPts = phase < 1
+    ? points.slice(0, Math.max(2, Math.ceil(phase * points.length)))
+    : points;
+
   // Precompute per-segment speeds for speed coloring
   let segSpeeds = [], speedMax = 1;
   if (speedColor) {
@@ -662,46 +730,47 @@ function updateStatCountLabel() {
     const sorted = [...segSpeeds].sort((a, b) => a - b);
     speedMax = sorted[Math.floor(sorted.length * 0.95)] || 1;
   }
+  // Trim segSpeeds to match drawPts length
+  const drawSegSpeeds = segSpeeds.slice(0, drawPts.length - 1);
   const spdToColor = spd => {
     const hue = Math.round(220 - Math.min(spd / speedMax, 1) * 220);
     return `hsl(${hue},100%,55%)`;
   };
 
-  // Route (3-pass glow)
-  if (speedColor && segSpeeds.length) {
-    // Glow passes: full path in white
+  // Route (3-pass glow) — uses drawPts for animation support
+  if (speedColor && drawSegSpeeds.length) {
     for (const pass of [{ w: lineWidth * 5, a: .07 }, { w: lineWidth * 2.5, a: .15 }]) {
       ctx.beginPath();
-      const f = toC(points[0].lat, points[0].lon);
-      ctx.moveTo(f.x, f.y);
-      for (let i = 1; i < points.length; i++) { const p = toC(points[i].lat, points[i].lon); ctx.lineTo(p.x, p.y); }
+      const f = toC(drawPts[0].lat, drawPts[0].lon); ctx.moveTo(f.x, f.y);
+      for (let i = 1; i < drawPts.length; i++) { const p = toC(drawPts[i].lat, drawPts[i].lon); ctx.lineTo(p.x, p.y); }
       ctx.strokeStyle = 'white'; ctx.globalAlpha = pass.a;
       ctx.lineWidth = pass.w; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke();
     }
-    // Sharp pass: per-segment speed color
     ctx.globalAlpha = 1; ctx.lineWidth = lineWidth; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    for (let i = 1; i < points.length; i++) {
-      const a = toC(points[i-1].lat, points[i-1].lon);
-      const b = toC(points[i].lat, points[i].lon);
+    for (let i = 1; i < drawPts.length; i++) {
+      const a = toC(drawPts[i-1].lat, drawPts[i-1].lon);
+      const b = toC(drawPts[i].lat, drawPts[i].lon);
       ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
-      ctx.strokeStyle = spdToColor(segSpeeds[i - 1]); ctx.stroke();
+      ctx.strokeStyle = spdToColor(drawSegSpeeds[i - 1]); ctx.stroke();
     }
   } else {
     for (const pass of [{ w: lineWidth * 5, a: .08 }, { w: lineWidth * 2.5, a: .18 }, { w: lineWidth, a: 1 }]) {
       ctx.beginPath();
-      const f = toC(points[0].lat, points[0].lon);
-      ctx.moveTo(f.x, f.y);
-      for (let i = 1; i < points.length; i++) { const p = toC(points[i].lat, points[i].lon); ctx.lineTo(p.x, p.y); }
+      const f = toC(drawPts[0].lat, drawPts[0].lon); ctx.moveTo(f.x, f.y);
+      for (let i = 1; i < drawPts.length; i++) { const p = toC(drawPts[i].lat, drawPts[i].lon); ctx.lineTo(p.x, p.y); }
       ctx.strokeStyle = color; ctx.globalAlpha = pass.a;
       ctx.lineWidth = pass.w; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke();
     }
   }
   ctx.globalAlpha = 1;
 
-  // Start dot
+  // Start dot (always at route start, not drawPts start)
   const sp = toC(points[0].lat, points[0].lon);
   ctx.beginPath(); ctx.arc(sp.x, sp.y, 14, 0, Math.PI*2); ctx.fillStyle = color; ctx.globalAlpha = .25; ctx.fill(); ctx.globalAlpha = 1;
   ctx.beginPath(); ctx.arc(sp.x, sp.y, 7, 0, Math.PI*2); ctx.fillStyle = color; ctx.fill();
+
+  if (statsAlpha <= 0) return;
+  ctx.globalAlpha = statsAlpha;
 
   // Panel gradient
   let grad;
@@ -792,11 +861,12 @@ function updateStatCountLabel() {
     const dotY = layout === 'top' ? panelY + panelH * .12 : panelY + panelH * .88;
     ctx.beginPath(); ctx.arc(STORY_W / 2, dotY, 4, 0, Math.PI*2); ctx.fillStyle = color; ctx.fill();
   }
+  ctx.globalAlpha = 1;
 }
 
 function updatePreview() {
   const H = format === 'post' ? STORY_W : STORY_H;
-  renderStory(currentPoints, currentStats, traceColor);
+  renderStory(currentPoints, currentStats, traceColor, { bgPhoto: backgroundPhoto });
   const wrapper = document.getElementById('previewWrapper');
   wrapper.style.aspectRatio = format === 'post' ? '1/1' : '9/16';
   const scale = Math.min(wrapper.clientWidth / STORY_W, wrapper.clientHeight / H);
@@ -808,7 +878,8 @@ function updatePreview() {
   previewCanvas.style.display = 'block';
 }
 
-// ── File handling ────────────────────────────────────────────────────────function handleFile(file) {
+// ── File handling ──────────────────────────────────────────────────────
+function handleFile(file) {
   if (!file || !file.name.toLowerCase().endsWith('.gpx')) {
     showError('Merci de choisir un fichier .gpx'); return;
   }
@@ -827,6 +898,7 @@ function updatePreview() {
       document.getElementById('statPickerSection').style.display  = 'block';
       document.getElementById('customTextSection').style.display  = 'block';
       document.getElementById('formatSection').style.display      = 'block';
+      document.getElementById('videoSection').style.display       = 'block';
       document.getElementById('customizeSection').style.display   = 'block';
       document.getElementById('actionButtons').style.display      = 'flex';
       document.getElementById('previewPlaceholder').style.display = 'none';
@@ -837,7 +909,8 @@ function updatePreview() {
   reader.readAsText(file);
 }
 
-// ── Upload zone ────────────────────────────────────────────────────────const uploadZone = document.getElementById('uploadZone');
+// ── Upload zone ──────────────────────────────────────────────────────
+const uploadZone = document.getElementById('uploadZone');
 const fileInput  = document.getElementById('fileInput');
 
 fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
@@ -848,7 +921,8 @@ uploadZone.addEventListener('drop', e => {
   handleFile(e.dataTransfer.files[0]);
 });
 
-// ── Color mode toggle ──────────────────────────────────────────────────────document.querySelector('.color-mode-row').addEventListener('click', e => {
+// ── Color mode toggle ─────────────────────────────────────────────────────
+document.querySelector('.color-mode-row').addEventListener('click', e => {
   const btn = e.target.closest('.color-mode-btn');
   if (!btn) return;
   document.querySelectorAll('.color-mode-btn').forEach(b => b.classList.remove('active'));
@@ -861,7 +935,8 @@ uploadZone.addEventListener('drop', e => {
   if (currentPoints.length) updatePreview();
 });
 
-// ── Color picker ─────────────────────────────────────────────────────────document.getElementById('colorPicker').addEventListener('click', e => {
+// ── Color picker ─────────────────────────────────────────────────────────
+document.getElementById('colorPicker').addEventListener('click', e => {
   const sw = e.target.closest('.color-swatch');
   if (!sw) return;
   document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
@@ -906,9 +981,10 @@ document.getElementById('customTextInput').addEventListener('input', e => {
   if (currentPoints.length) updatePreview();
 });
 
-// ── Share ──────────────────────────────────────────────────────────────document.getElementById('shareBtn').addEventListener('click', async () => {
+// ── Share ──────────────────────────────────────────────────────────
+document.getElementById('shareBtn').addEventListener('click', async () => {
   if (!currentPoints.length) return;
-  renderStory(currentPoints, currentStats, traceColor);
+  renderStory(currentPoints, currentStats, traceColor, { bgPhoto: backgroundPhoto });
   renderCanvas.toBlob(async blob => {
     const file = new File([blob], 'moto-story.png', { type: 'image/png' });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -923,12 +999,19 @@ document.getElementById('customTextInput').addEventListener('input', e => {
   }, 'image/png');
 });
 
-// ── Reset ──────────────────────────────────────────────────────────────document.getElementById('resetBtn').addEventListener('click', () => {
+// ── Reset ──────────────────────────────────────────────────────────
+document.getElementById('resetBtn').addEventListener('click', () => {
   currentPoints = []; currentStats = {};
   fileInput.value = '';
-  ['statPickerSection','customTextSection','formatSection','customizeSection','actionButtons'].forEach(id =>
+  ['statPickerSection','customTextSection','formatSection','videoSection','customizeSection','actionButtons'].forEach(id =>
     document.getElementById(id).style.display = 'none'
   );
+  // Reset video section
+  backgroundPhoto = null;
+  document.getElementById('photoInput').value = '';
+  document.getElementById('photoThumb').style.display = 'none';
+  document.getElementById('photoClearBtn').style.display = 'none';
+  document.getElementById('photoLabel').innerHTML = 'Photo de fond <span style="color:var(--text-dim);font-size:12px">(optionnel)</span>';
   customText = '';
   document.getElementById('customTextInput').value = '';
   speedColor = false;
@@ -944,7 +1027,112 @@ document.getElementById('customTextInput').addEventListener('input', e => {
   hideError();
 });
 
-// ── Helpers ──────────────────────────────────────────────────────────────function showError(msg) {
+// ── Video generation ─────────────────────────────────────────────────────
+let backgroundPhoto = null;
+let videoDuration   = 5;
+
+document.getElementById('photoInput').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const img = new Image();
+  img.onload = () => {
+    backgroundPhoto = img;
+    document.getElementById('photoThumb').src = img.src;
+    document.getElementById('photoThumb').style.display = 'block';
+    document.getElementById('photoClearBtn').style.display = 'flex';
+    document.getElementById('photoLabel').textContent = file.name.replace(/\.[^.]+$/, '');
+    if (currentPoints.length) updatePreview();
+  };
+  img.src = URL.createObjectURL(file);
+});
+
+document.getElementById('photoClearBtn').addEventListener('click', e => {
+  e.stopPropagation();
+  backgroundPhoto = null;
+  document.getElementById('photoInput').value = '';
+  document.getElementById('photoThumb').style.display = 'none';
+  document.getElementById('photoClearBtn').style.display = 'none';
+  document.getElementById('photoLabel').innerHTML = 'Photo de fond <span style="color:var(--text-dim);font-size:12px">(optionnel)</span>';
+  if (currentPoints.length) updatePreview();
+});
+
+document.getElementById('durPicker').addEventListener('click', e => {
+  const btn = e.target.closest('.dur-btn');
+  if (!btn) return;
+  document.querySelectorAll('.dur-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  videoDuration = parseInt(btn.dataset.dur);
+});
+
+document.getElementById('videoBtn').addEventListener('click', async () => {
+  if (!currentPoints.length) return;
+
+  if (typeof MediaRecorder === 'undefined') {
+    showToast('Vidéo non supportée sur ce navigateur'); return;
+  }
+
+  const mimeType = ['video/mp4', 'video/webm;codecs=vp9', 'video/webm'].find(m => MediaRecorder.isTypeSupported(m));
+  if (!mimeType) { showToast('Format vidéo non supporté'); return; }
+
+  const btn = document.getElementById('videoBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Génération…';
+
+  const H          = format === 'post' ? STORY_W : STORY_H;
+  const durationMs = videoDuration * 1000;
+  const traceMs    = durationMs * 0.78;   // trace draws over first 78%
+  const holdMs     = durationMs * 0.22;   // stats fade in over last 22%
+  const chunks     = [];
+
+  const stream   = renderCanvas.captureStream(30);
+  const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8_000_000 });
+  recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+
+  await new Promise(resolve => {
+    recorder.onstop = resolve;
+    recorder.start(100);
+
+    const startTs = performance.now();
+    function frame(now) {
+      const elapsed   = now - startTs;
+      const tracePhase  = Math.min(elapsed / traceMs, 1);
+      const statsAlpha  = elapsed > traceMs ? Math.min((elapsed - traceMs) / holdMs, 1) : 0;
+      renderStory(currentPoints, currentStats, traceColor, {
+        phase: tracePhase, statsAlpha, bgPhoto: backgroundPhoto
+      });
+      if (elapsed < durationMs) {
+        requestAnimationFrame(frame);
+      } else {
+        // Hold 1 final frame then stop
+        renderStory(currentPoints, currentStats, traceColor, {
+          phase: 1, statsAlpha: 1, bgPhoto: backgroundPhoto
+        });
+        setTimeout(() => recorder.stop(), 200);
+      }
+    }
+    requestAnimationFrame(frame);
+  });
+
+  btn.disabled = false;
+  btn.textContent = '▶ Générer la vidéo animée';
+
+  const ext  = mimeType.includes('mp4') ? 'mp4' : 'webm';
+  const blob = new Blob(chunks, { type: mimeType });
+  const file = new File([blob], `moto-story.${ext}`, { type: mimeType });
+
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: 'Ma sortie moto' }); return; }
+    catch (err) { if (err.name === 'AbortError') return; }
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = file.name; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  showToast('Vidéo téléchargée ✓');
+});
+
+// ── Helpers ──────────────────────────────────────────────────────────
+function showError(msg) {
   const el = document.getElementById('errorMsg');
   el.textContent = msg; el.style.display = 'block';
 }
@@ -958,7 +1146,8 @@ function showToast(msg) {
   toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
 }
 
-// ── Preferences (localStorage) ────────────────────────────────────────────────const PREFS_KEY = 'motoStoryPrefs';
+// ── Preferences (localStorage) ──────────────────────────────────────────────
+const PREFS_KEY = 'motoStoryPrefs';
 
 function savePrefs() {
   try {
