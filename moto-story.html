@@ -464,7 +464,7 @@
 <canvas id="render-canvas" style="display:none"></canvas>
 
 <script>
-// ── Stat definitions ──────────────────────────────────────────────────────
+// ── Stat definitions ───────────────────────────────────────
 const STAT_DEFS = [
   { id: 'dist',     label: 'Distance',    unit: 'km',   icon: '📍' },
   { id: 'avgSpeed', label: 'Vitesse moy.', unit: 'km/h', icon: '⚡️' },
@@ -477,12 +477,12 @@ const STAT_DEFS = [
   { id: 'avgCad',   label: 'Cadence',     unit: 'spm',  icon: '👟' },
 ];
 
-// ── Constants ──────────────────────────────────────────────────────
+// ── Constants ──────────────────────────────────────────────
 const STORY_W = 1080;
 const STORY_H = 1920;
 const PADDING = 0.12;
 
-// ── State ────────────────────────────────────────────────────────
+// ── State ──────────────────────────────────────────────────
 let currentPoints   = [];
 let currentStats    = {};
 let selectedStats   = ['dist', 'avgSpeed', 'dur'];
@@ -495,7 +495,7 @@ let speedColor      = false;
 const renderCanvas  = document.getElementById('render-canvas');
 const previewCanvas = document.getElementById('preview-canvas');
 
-// ── GPX Parsing ─────────────────────────────────────────────────────
+// ── GPX Parsing ────────────────────────────────────────────
 function getExtVal(pt, name) {
   // Works regardless of namespace prefix by matching localName
   const all = pt.getElementsByTagName('*');
@@ -521,7 +521,7 @@ function parseGPX(text) {
   }));
 }
 
-// ── Haversine ──────────────────────────────────────────────────────
+// ── Haversine ──────────────────────────────────────────────
 function haversine(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const φ1 = lat1 * Math.PI / 180, φ2 = lat2 * Math.PI / 180;
@@ -531,7 +531,7 @@ function haversine(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.asin(Math.sqrt(a));
 }
 
-// ── Stats ────────────────────────────────────────────────────────
+// ── Stats ──────────────────────────────────────────────────
 function calcStats(points) {
   let totalDist = 0, movingMs = 0, maxSpeedKmh = 0;
   let elevGain = 0;
@@ -546,7 +546,7 @@ function calcStats(points) {
       const dtH  = dtMs / 3600000;
       if (dtH > 0) {
         const spd = d / dtH;
-        // Moving time: speed > 3 km/h; max speed: segment ≥2s to filter GPS noise
+        // Moving time: speed > 3 km/h; max speed: segment ≥ 2s to filter GPS noise
         if (spd > 3) movingMs += dtMs;
         if (dtMs >= 2000 && spd < 350) maxSpeedKmh = Math.max(maxSpeedKmh, spd);
       }
@@ -614,14 +614,14 @@ function isAvailable(id, stats) {
   return v !== null && v !== undefined;
 }
 
-// ── Auto-select best stats ───────────────────────────────────────────────────
+// ── Auto-select best stats ─────────────────────────────────
 function autoSelect(stats) {
   const priority = ['dist', 'avgSpeed', 'maxSpeed', 'elevGain', 'maxAlt', 'avgHr', 'maxHr', 'dur', 'avgCad'];
   selectedStats = priority.filter(id => isAvailable(id, stats)).slice(0, 3);
   if (selectedStats.length === 0) selectedStats = ['dist'];
 }
 
-// ── Stat picker UI ────────────────────────────────────────────────────────
+// ── Stat picker UI ─────────────────────────────────────────
 function buildStatPicker(stats) {
   const picker = document.getElementById('statPicker');
   picker.innerHTML = '';
@@ -663,7 +663,7 @@ function updateStatCountLabel() {
   document.getElementById('statCountLabel').textContent = `${selectedStats.length} / 3 sélectionnées`;
 }
 
-// ── Canvas rendering ───────────────────────────────────────────────────────
+// ── Canvas rendering ───────────────────────────────────────
 function renderStory(points, stats, color, opts = {}) {
   const { phase = 1, statsAlpha = 1, bgPhoto = null } = opts;
   const H = format === 'post' ? STORY_W : STORY_H;
@@ -804,9 +804,19 @@ function renderStory(points, stats, color, opts = {}) {
     const ph = fontSize * 1.8;
     const px = STORY_W / 2 - pw / 2;
     const py = textY - ph / 2;
+    const r  = ph / 2;
     ctx.fillStyle = 'rgba(0,0,0,0.45)';
     ctx.beginPath();
-    ctx.roundRect(px, py, pw, ph, ph / 2);
+    ctx.moveTo(px + r, py);
+    ctx.lineTo(px + pw - r, py);
+    ctx.arcTo(px + pw, py, px + pw, py + r, r);
+    ctx.lineTo(px + pw, py + ph - r);
+    ctx.arcTo(px + pw, py + ph, px + pw - r, py + ph, r);
+    ctx.lineTo(px + r, py + ph);
+    ctx.arcTo(px, py + ph, px, py + ph - r, r);
+    ctx.lineTo(px, py + r);
+    ctx.arcTo(px, py, px + r, py, r);
+    ctx.closePath();
     ctx.fill();
     ctx.fillStyle = 'rgba(255,255,255,0.85)';
     ctx.fillText(label, STORY_W / 2, textY);
@@ -878,7 +888,7 @@ function updatePreview() {
   previewCanvas.style.display = 'block';
 }
 
-// ── File handling ──────────────────────────────────────────────────────
+// ── File handling ──────────────────────────────────────────
 function handleFile(file) {
   if (!file || !file.name.toLowerCase().endsWith('.gpx')) {
     showError('Merci de choisir un fichier .gpx'); return;
@@ -909,7 +919,7 @@ function handleFile(file) {
   reader.readAsText(file);
 }
 
-// ── Upload zone ──────────────────────────────────────────────────────
+// ── Upload zone ────────────────────────────────────────────
 const uploadZone = document.getElementById('uploadZone');
 const fileInput  = document.getElementById('fileInput');
 
@@ -921,7 +931,7 @@ uploadZone.addEventListener('drop', e => {
   handleFile(e.dataTransfer.files[0]);
 });
 
-// ── Color mode toggle ─────────────────────────────────────────────────────
+// ── Color mode toggle ──────────────────────────────────────
 document.querySelector('.color-mode-row').addEventListener('click', e => {
   const btn = e.target.closest('.color-mode-btn');
   if (!btn) return;
@@ -935,7 +945,7 @@ document.querySelector('.color-mode-row').addEventListener('click', e => {
   if (currentPoints.length) updatePreview();
 });
 
-// ── Color picker ─────────────────────────────────────────────────────────
+// ── Color picker ───────────────────────────────────────────
 document.getElementById('colorPicker').addEventListener('click', e => {
   const sw = e.target.closest('.color-swatch');
   if (!sw) return;
@@ -981,7 +991,7 @@ document.getElementById('customTextInput').addEventListener('input', e => {
   if (currentPoints.length) updatePreview();
 });
 
-// ── Share ──────────────────────────────────────────────────────────
+// ── Share ──────────────────────────────────────────────────
 document.getElementById('shareBtn').addEventListener('click', async () => {
   if (!currentPoints.length) return;
   renderStory(currentPoints, currentStats, traceColor, { bgPhoto: backgroundPhoto });
@@ -999,7 +1009,7 @@ document.getElementById('shareBtn').addEventListener('click', async () => {
   }, 'image/png');
 });
 
-// ── Reset ──────────────────────────────────────────────────────────
+// ── Reset ──────────────────────────────────────────────────
 document.getElementById('resetBtn').addEventListener('click', () => {
   currentPoints = []; currentStats = {};
   fileInput.value = '';
@@ -1027,7 +1037,7 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   hideError();
 });
 
-// ── Video generation ─────────────────────────────────────────────────────
+// ── Video generation ───────────────────────────────────────
 let backgroundPhoto = null;
 let videoDuration   = 5;
 
@@ -1085,7 +1095,7 @@ document.getElementById('videoBtn').addEventListener('click', async () => {
   const chunks     = [];
 
   const stream   = renderCanvas.captureStream(30);
-  const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8_000_000 });
+  const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8000000 });
   recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
 
   await new Promise(resolve => {
@@ -1131,7 +1141,7 @@ document.getElementById('videoBtn').addEventListener('click', async () => {
   showToast('Vidéo téléchargée ✓');
 });
 
-// ── Helpers ──────────────────────────────────────────────────────────
+// ── Helpers ────────────────────────────────────────────────
 function showError(msg) {
   const el = document.getElementById('errorMsg');
   el.textContent = msg; el.style.display = 'block';
@@ -1146,7 +1156,7 @@ function showToast(msg) {
   toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
 }
 
-// ── Preferences (localStorage) ──────────────────────────────────────────────
+// ── Preferences (localStorage) ────────────────────────────
 const PREFS_KEY = 'motoStoryPrefs';
 
 function savePrefs() {
