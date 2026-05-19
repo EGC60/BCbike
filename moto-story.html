@@ -1096,6 +1096,14 @@ document.getElementById('videoBtn').addEventListener('click', async () => {
   const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8000000 });
   recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
 
+  // Pre-render stats panel once (transparent bg, no photo) → composite every frame
+  renderStory(currentPoints, currentStats, traceColor, {
+    phase: 0, statsAlpha: 1, bgPhoto: null
+  });
+  const statsOverlay = document.createElement('canvas');
+  statsOverlay.width = STORY_W; statsOverlay.height = H;
+  statsOverlay.getContext('2d').drawImage(renderCanvas, 0, 0);
+
   await new Promise(resolve => {
     recorder.onstop = resolve;
     recorder.start(100);
@@ -1104,15 +1112,15 @@ document.getElementById('videoBtn').addEventListener('click', async () => {
     function frame(now) {
       const elapsed    = now - startTs;
       const tracePhase = Math.min(elapsed / durationMs, 1);
+      // Draw trace only (no stats panel)
       renderStory(currentPoints, currentStats, traceColor, {
-        phase: tracePhase, statsAlpha: 1, bgPhoto: backgroundPhoto
+        phase: tracePhase, statsAlpha: 0, bgPhoto: backgroundPhoto
       });
+      // Always composite stats on top
+      renderCanvas.getContext('2d').drawImage(statsOverlay, 0, 0);
       if (elapsed < durationMs) {
         requestAnimationFrame(frame);
       } else {
-        renderStory(currentPoints, currentStats, traceColor, {
-          phase: 1, statsAlpha: 1, bgPhoto: backgroundPhoto
-        });
         setTimeout(() => recorder.stop(), 200);
       }
     }
