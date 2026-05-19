@@ -606,6 +606,7 @@ function toggleStat(id, stats) {
     if (selectedStats.length < 3) selectedStats.push(id);
     else showToast('Maximum 3 stats — désélectionne-en une d\'abord');
   }
+  savePrefs();
   buildStatPicker(stats);
   if (currentPoints.length) updatePreview();
 }
@@ -866,6 +867,7 @@ document.querySelector('.color-mode-row').addEventListener('click', e => {
   document.getElementById('colorPicker').classList.toggle('disabled', speedColor);
   document.getElementById('speedLegend').classList.toggle('visible', speedColor);
   document.getElementById('speedLegendLabels').classList.toggle('visible', speedColor);
+  savePrefs();
   if (currentPoints.length) updatePreview();
 });
 
@@ -876,6 +878,7 @@ document.getElementById('colorPicker').addEventListener('click', e => {
   document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
   sw.classList.add('active');
   traceColor = sw.dataset.color;
+  savePrefs();
   if (currentPoints.length) updatePreview();
 });
 
@@ -885,6 +888,7 @@ document.getElementById('layoutPicker').addEventListener('click', e => {
   document.querySelectorAll('.layout-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   layout = btn.dataset.layout;
+  savePrefs();
   if (currentPoints.length) updatePreview();
 });
 
@@ -894,6 +898,7 @@ document.getElementById('widthPicker').addEventListener('click', e => {
   document.querySelectorAll('.width-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   lineWidth = parseInt(btn.dataset.width);
+  savePrefs();
   if (currentPoints.length) updatePreview();
 });
 
@@ -903,6 +908,7 @@ document.getElementById('formatPicker').addEventListener('click', e => {
   document.querySelectorAll('.format-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   format = btn.dataset.format;
+  savePrefs();
   if (currentPoints.length) updatePreview();
 });
 
@@ -965,6 +971,60 @@ function showToast(msg) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
 }
+
+// ── Preferences (localStorage) ────────────────────────────
+const PREFS_KEY = 'motoStoryPrefs';
+
+function savePrefs() {
+  try {
+    localStorage.setItem(PREFS_KEY, JSON.stringify(
+      { traceColor, lineWidth, layout, format, speedColor, selectedStats }
+    ));
+  } catch (_) {}
+}
+
+function loadPrefs() {
+  try {
+    const raw = localStorage.getItem(PREFS_KEY);
+    if (!raw) return;
+    const p = JSON.parse(raw);
+    if (p.traceColor)    traceColor    = p.traceColor;
+    if (p.lineWidth)     lineWidth     = p.lineWidth;
+    if (p.layout)        layout        = p.layout;
+    if (p.format)        format        = p.format;
+    if (typeof p.speedColor === 'boolean') speedColor = p.speedColor;
+    if (Array.isArray(p.selectedStats) && p.selectedStats.length) selectedStats = p.selectedStats;
+  } catch (_) {}
+}
+
+function applyPrefsUI() {
+  // Color swatches
+  document.querySelectorAll('.color-swatch').forEach(s =>
+    s.classList.toggle('active', s.dataset.color === traceColor)
+  );
+  // Width buttons
+  document.querySelectorAll('.width-btn').forEach(b =>
+    b.classList.toggle('active', parseInt(b.dataset.width) === lineWidth)
+  );
+  // Layout buttons
+  document.querySelectorAll('.layout-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.layout === layout)
+  );
+  // Format buttons
+  document.querySelectorAll('.format-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.format === format)
+  );
+  // Color mode
+  document.querySelectorAll('.color-mode-btn').forEach(b =>
+    b.classList.toggle('active', (b.dataset.mode === 'speed') === speedColor)
+  );
+  document.getElementById('colorPicker').classList.toggle('disabled', speedColor);
+  document.getElementById('speedLegend').classList.toggle('visible', speedColor);
+  document.getElementById('speedLegendLabels').classList.toggle('visible', speedColor);
+}
+
+loadPrefs();
+applyPrefsUI();
 </script>
 </body>
 </html>
