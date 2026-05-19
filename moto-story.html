@@ -804,9 +804,19 @@ function renderStory(points, stats, color, opts = {}) {
     const ph = fontSize * 1.8;
     const px = STORY_W / 2 - pw / 2;
     const py = textY - ph / 2;
+    const r  = ph / 2;
     ctx.fillStyle = 'rgba(0,0,0,0.45)';
     ctx.beginPath();
-    ctx.roundRect(px, py, pw, ph, ph / 2);
+    ctx.moveTo(px + r, py);
+    ctx.lineTo(px + pw - r, py);
+    ctx.arcTo(px + pw, py, px + pw, py + r, r);
+    ctx.lineTo(px + pw, py + ph - r);
+    ctx.arcTo(px + pw, py + ph, px + pw - r, py + ph, r);
+    ctx.lineTo(px + r, py + ph);
+    ctx.arcTo(px, py + ph, px, py + ph - r, r);
+    ctx.lineTo(px, py + r);
+    ctx.arcTo(px, py, px + r, py, r);
+    ctx.closePath();
     ctx.fill();
     ctx.fillStyle = 'rgba(255,255,255,0.85)';
     ctx.fillText(label, STORY_W / 2, textY);
@@ -1085,7 +1095,7 @@ document.getElementById('videoBtn').addEventListener('click', async () => {
   const chunks     = [];
 
   const stream   = renderCanvas.captureStream(30);
-  const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8_000_000 });
+  const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8000000 });
   recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
 
   await new Promise(resolve => {
