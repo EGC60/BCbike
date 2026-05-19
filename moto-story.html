@@ -1090,8 +1090,6 @@ document.getElementById('videoBtn').addEventListener('click', async () => {
 
   const H          = format === 'post' ? STORY_W : STORY_H;
   const durationMs = videoDuration * 1000;
-  const traceMs    = durationMs * 0.78;   // trace draws over first 78%
-  const holdMs     = durationMs * 0.22;   // stats fade in over last 22%
   const chunks     = [];
 
   const stream   = renderCanvas.captureStream(30);
@@ -1104,16 +1102,14 @@ document.getElementById('videoBtn').addEventListener('click', async () => {
 
     const startTs = performance.now();
     function frame(now) {
-      const elapsed   = now - startTs;
-      const tracePhase  = Math.min(elapsed / traceMs, 1);
-      const statsAlpha  = elapsed > traceMs ? Math.min((elapsed - traceMs) / holdMs, 1) : 0;
+      const elapsed    = now - startTs;
+      const tracePhase = Math.min(elapsed / durationMs, 1);
       renderStory(currentPoints, currentStats, traceColor, {
-        phase: tracePhase, statsAlpha, bgPhoto: backgroundPhoto
+        phase: tracePhase, statsAlpha: 1, bgPhoto: backgroundPhoto
       });
       if (elapsed < durationMs) {
         requestAnimationFrame(frame);
       } else {
-        // Hold 1 final frame then stop
         renderStory(currentPoints, currentStats, traceColor, {
           phase: 1, statsAlpha: 1, bgPhoto: backgroundPhoto
         });
